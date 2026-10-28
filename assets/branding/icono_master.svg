@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img">
+  <title>SISAP by CENIVRA — traza de seguimiento</title>
+  <!-- Generado por scripts/generar_icono.py — geometria original. No editar a mano. -->
+  <g fill="none" stroke="#2E7CD6" stroke-width="30.72" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="46.08,189.44 128.00,189.44 128.00,122.88 204.80,122.88 204.80,61.44"/>
+  </g>
+  <g fill="#2E7CD6">
+    <circle cx="46.08" cy="189.44" r="30.72"/>
+    <circle cx="128.00" cy="122.88" r="30.72"/>
+    <circle cx="204.80" cy="61.44" r="30.72"/>
+  </g>
+</svg>

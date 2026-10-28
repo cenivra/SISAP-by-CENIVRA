@@ -1,0 +1,251 @@
+# ============================================================
+# SISAP by CENIVRA — PUBLIC REPOSITORY
+# Git ignore policy
+# ============================================================
+
+# ------------------------------------------------------------
+# HISTORICAL / LOCAL MATERIAL
+# ------------------------------------------------------------
+
+_HISTORICO/
+
+# Artefactos internos excluidos de la distribución pública de SISAP
+/sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza/implementacion_interfaz_autoencoder_DCSA_20261024/
+/sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza/auditoria_motor_B_evaluacion_inicial_20261024/
+/sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza/auditoria_autoencoder_sisap_20261024/
+/scripts/generar_icono.py
+/scripts/firmar.py
+
+# Archivos ejecutivos, presentaciones locales y notas internas
+*.docx
+*.pdf
+*.pptx
+*.mp4
+.commandcode/
+build_pitch_pptx.py
+assets/pitch_jalisco_2026/
+assets/tema_v1_prototipo.*
+BASE_ANALITICA_NORMATIVA_CT.md
+CORPUS_NORMATIVO_CT_EXECUTIVE_SUMMARY.md
+DCSA_DICO_Y_FASE_TRANSVERSAL_PROFESIONAL.md
+DECISION_NOMBRE_SISAP.md
+ESTADO_SOFTWARE_2026-10-01.md
+RUTA_FINANCIAMIENTO_MEJORA_2027.md
+SISAP_Pitch_Jalisco_MedTech_2026_*.md
+app/models/
+
+
+# ------------------------------------------------------------
+# PYTHON — CACHE / BYTECODE
+# ------------------------------------------------------------
+
+__pycache__/
+*.py[codz]
+*$py.class
+
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.ipynb_checkpoints/
+
+# ------------------------------------------------------------
+# ENVIRONMENTS / LOCAL CONFIGURATION
+# ------------------------------------------------------------
+
+.env
+.envrc
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+.pdm-python
+.pdm-build/
+.pixi/
+__pypackages__/
+
+# ------------------------------------------------------------
+# BUILD / PACKAGING
+# ------------------------------------------------------------
+
+build/
+dist/
+dist-electron/
+dist-desktop/
+release-builds/
+*.egg-info/
+.eggs/
+*.egg
+*.spec
+*.manifest
+
+# ------------------------------------------------------------
+# TEST / COVERAGE OUTPUT
+# ------------------------------------------------------------
+
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+*.py.cover
+.tox/
+.nox/
+
+# ------------------------------------------------------------
+# LOCAL DATABASES / DATA FILES
+# IMPORTANT: source data must never enter the public repository
+# ------------------------------------------------------------
+
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+*.csv
+*.tsv
+*.xlsx
+*.xls
+
+data/exports/
+data/test/
+data/auxiliares/
+
+# ------------------------------------------------------------
+# MODEL / ML ARTIFACTS
+# ------------------------------------------------------------
+
+*.h5
+*.hdf5
+*.rds
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+# --- Recursos externos de modelos y artefactos derivados (no se publican) ---
+# Los pesos del encoder clínico viven fuera del ejecutable, en data/modelo/.
+# El árbol completo queda excluido: contiene pesos, tokenizadores, configuraciones
+# descargadas y la caché del hub.
+data/modelo/
+*.npz
+*.bin
+*.ckpt
+*.msgpack
+*.gguf
+*.ckpt.*
+checkpoints/
+checkpoint-*/
+modelos_experimentales/
+embeddings/
+embeddings_*/
+*_embeddings.npz
+*_embeddings.csv
+.cache/
+
+# ------------------------------------------------------------
+# LOGS / RUNTIME OUTPUT
+# ------------------------------------------------------------
+
+*.log
+sisap_startup.log
+
+# ------------------------------------------------------------
+# TEMPORARY FILES
+# ------------------------------------------------------------
+
+*.tmp
+*.temp
+*.bak
+*~
+.DS_Store
+Thumbs.db
+
+tempCodeRunnerFile.py
+
+# ------------------------------------------------------------
+# IDE / EDITOR LOCAL STATE
+# ------------------------------------------------------------
+
+.vscode/
+.idea/
+
+# ------------------------------------------------------------
+# JUPYTER / NOTEBOOK LOCAL STATE
+# ------------------------------------------------------------
+
+.profile_default/
+ipython_config.py
+*.ipynb
+*.parquet
+
+
+# ------------------------------------------------------------
+# TOOL / LOCAL STATE
+# ------------------------------------------------------------
+
+.omp/
+.omp-deleg/
+
+# ------------------------------------------------------------
+# SECURITY / CREDENTIALS
+# ------------------------------------------------------------
+
+.pypirc
+.streamlit/secrets.toml
+firebase-applet-config.json
+!firebase-applet-config.json.example
+
+# --- Firma de código: material de firma, claves y secretos (NUNCA al repositorio público) ---
+# La llave privada de firma no vive en el repo: se pasa por variables de entorno.
+*.pfx
+*.p12
+*.pvk
+*.snk
+*.key
+*.pem
+*.cer
+*.crt
+*.p7b
+*.sst
+firma.env
+signing.env
+certs/
+credenciales/
+
+# --- Complemento de firma: almacenes y sobres de secretos no cubiertos arriba ---
+*.jks
+*.keystore
+*.sig
+.env.signing
+.env.signing.*
+*_signing.env
+
+# --- Salidas de construcción e instalador (nunca se versionan) ---
+# El version file del ejecutable se genera en build/ y queda cubierto aquí.
+Output/
+installer_out/
+release/
+
+# --- Demos locales no publicados ---
+demo/
+
+# ------------------------------------------------------------
+# OPTIONAL LOCAL EXPORTS
+# ------------------------------------------------------------
+
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+/docs/technical_history/
+/docs/project_history/

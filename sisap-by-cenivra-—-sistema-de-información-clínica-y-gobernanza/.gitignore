@@ -1,0 +1,38 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Base de datos local de pruebas — NUNCA versionar ni publicar
+data/local/
+backend/data/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite
+*.db
+backend/**/.session-token
+*.session-token
+
+# Credenciales y secretos locales
+firebase-applet-config.json
+!firebase-applet-config.json.example
+
+# Paquetes y binarios de escritorio
+dist-desktop/
+dist-electron/
+release-builds/
+
+# Artefactos y datos de investigación clínica reservados
+*.parquet
+*.ipynb
+implementacion_interfaz_autoencoder_DCSA_20261024/
+auditoria_motor_B_evaluacion_inicial_20261024/
+auditoria_autoencoder_sisap_20261024/
+
+

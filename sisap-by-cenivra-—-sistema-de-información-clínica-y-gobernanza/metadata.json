@@ -1,0 +1,6 @@
+{
+  "name": "SISAP by CENIVRA — Sistema de Información Clínica y Gobernanza",
+  "description": "Sistema clínico y de gobernanza de datos para la atención de trastornos por uso de sustancias (TUS), con seudonimización estricta, perfiles de acceso profesional, trazabilidad completa y respaldo en Google Drive.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

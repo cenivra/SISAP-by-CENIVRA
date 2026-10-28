@@ -1,0 +1,18 @@
+{
+  "name": "sisap-local-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend local de pruebas para SISAP (SQLite + node:http). Solo loopback. NO expone modelos.",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "init-db": "node src/cli/init-db.js",
+    "health": "node src/cli/health.js",
+    "backup": "node src/cli/backup.js",
+    "seed-fixtures": "node src/cli/seed-fixtures.js",
+    "test": "node --test test/*.test.js"
+  }
+}

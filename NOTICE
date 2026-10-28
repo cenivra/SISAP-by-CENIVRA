@@ -1,0 +1,144 @@
+NOTICE — qué partes de este proyecto no son nuestras
+===================================================
+
+Este documento declara los materiales de terceros que el proyecto usa o integra, y
+con qué permiso. **No es un documento terminado**: donde la licencia no se ha podido
+verificar, se dice, en lugar de afirmarla.
+
+Los estados se marcan con la convención del proyecto:
+
+| Marca | Significado |
+|---|---|
+| ✔ VERIFICADO | Comprobado contra la fuente |
+| ⚠ REVISAR REFERENCIA | Se conoce el titular, no la licencia aplicable |
+| ✖ NO VERIFICADO | No se ha comprobado |
+
+---
+
+1. Instrumentos psicométricos
+-----------------------------
+
+El sistema **califica** los siguientes instrumentos. Calificar un instrumento **no
+otorga ningún derecho sobre sus reactivos**, y los reactivos no se reproducen en
+este repositorio.
+
+| Instrumento | Titular | Licencia | Estado |
+|---|---|---|---|
+| **STAXI-2** (inventario de expresión de ira estado-rasgo) | **PAR, Inc.** (Psychological Assessment Resources) | **Comercial y cerrada.** «Todos los derechos reservados. No puede reproducirse total ni parcialmente, en ninguna forma ni por ningún medio, sin permiso escrito de PAR, Inc.» | ✔ **VERIFICADO** |
+| **BIS-11** (escala de impulsividad de Barratt) | Barratt, Stanford y Patton | **Gratuita para investigación y clínica, con atribución.** El conjunto completo de 30 reactivos está publicado abiertamente en el apéndice de Stanford et al. (2009) | ✔ **VERIFICADO** |
+| Escalas restantes del conjunto de seis | Por determinar | — | ✖ NO VERIFICADO |
+
+### La consecuencia, dicha sin rodeos
+
+**Ninguno de los dos es un problema para investigar. Los dos lo son para el producto.**
+
+- **STAXI-2**: es de PAR. Calificarlo en un producto que se comercialice **exige
+  licencia del editor**; el software no puede repartir sus reactivos.
+- **BIS-11**: es libre para investigación y clínica **con atribución**, pero
+  «**la integración en aplicaciones de software comercial**» está expresamente
+  entre los usos que **requieren licencia formal por escrito** de los titulares
+  (Dr. Matthew S. Stanford / Baylor University, UTMB Galveston).
+
+Como CENIVRA es una empresa en constitución y esto es un producto, **los dos
+instrumentos exigen una llamada al titular antes de venderse**, y no por un
+tecnicismo: es la diferencia entre usar una escala y redistribuirla.
+
+**Qué hacer, en orden:**
+1. **Antes de cualquier piloto**: escribir a PAR y a Baylor/UTMB diciendo qué se
+   pretende exactamente —calificar, no redistribuir— y pedir términos por escrito.
+2. **Mientras no haya respuesta**: el sistema puede calificar para investigación
+   sin comercializar, y el `NOTICE` es donde queda dicho que no hay licencia.
+3. **Las cuatro escalas restantes**: verificar antes de que el producto salga.
+
+**Fuentes de las dos verificaciones** (consultadas el 2026-09-28):
+- PAR / STAXI-2: aviso de copyright en el informe interpretativo del instrumento
+  (`paa.nz/wp-content/uploads/2018/08/STAXI-2-Interpretive-Report.pdf`) y ficha del
+  catálogo de instrumentos de `psychology.me`.
+- BIS-11: ficha del instrumento en `eprovide.mapi-trust.org` («Copyright Barratt and
+  Patton, 1985. All rights reserved») y la guía de administración y calificación
+  distribuida por Baylor University.
+
+
+El **instrumento propio del proyecto** (guía de narraciones, versión V1, ocho
+preguntas abiertas) es nuestro. La **versión V2 es exploratoria y no tiene
+evidencia**; no se usa en la recolección ni en el análisis.
+
+---
+
+2. Corpus de terceros
+---------------------
+
+Para el diseño de la interfaz y la revisión normativa se reunieron corpus de
+documentos ajenos (manuales de diseño de productos clínicos, plataformas
+psicométricas, normativa de comunidades terapéuticas). **Son de quienes los
+escribieron.**
+
+No forman parte de esta licencia, y la frontera del repositorio los excluye: la
+razón por la que se reunieron está documentada, el material en sí no se publica.
+
+---
+
+3. Tipografías
+--------------
+
+✔ **VERIFICADO.** La interfaz autoaloja dos familias, y **las dos están bajo SIL Open
+Font License 1.1**, que permite incrustarlas y redistribuirlas junto con el software.
+
+| Familia | Titular | Licencia | Dónde se usa |
+|---|---|---|---|
+| **Sora** | The Sora Project Authors (2019) | **OFL 1.1** | Interfaz — texto |
+| **JetBrains Mono** | The JetBrains Mono Project Authors (2020) | **OFL 1.1** | Interfaz — código y cifras |
+
+Los textos íntegros de las dos licencias están **junto a las fuentes**:
+`assets/fonts/OFL-Sora.txt` y `assets/fonts/OFL-JetBrainsMono.txt`.
+
+**Un defecto corregido el 2026-09-28, y conviene que quede escrito:** las fuentes se
+distribuían **sin su licencia**. La OFL exige que el texto acompañe a las copias de
+la fuente, así que el repositorio **estaba incumpliendo una condición de la licencia
+que decía cumplir**. Se añadieron los dos archivos.
+
+Las familias que aparecen por nombre sin distribuirse —`Segoe UI`, `Roboto`,
+`Helvetica`, `Arial`— son fuentes del sistema operativo del equipo: **no se
+redistribuyen**, así que no hay obligación que cumplir con ellas.
+
+---
+
+4. Bibliotecas y dependencias
+-----------------------------
+
+Las dependencias de software se declaran en `requirements.txt` y en
+`pyproject.toml`, cada una con su licencia. El inventario de licencias de las
+dependencias ✖ **NO VERIFICADO**.
+
+Las versiones y su justificación se documentan en el expediente de configuración:
+`docs/08_configuration_management/` y
+`docs/09_configuration_status_soup_problem_management/`.
+
+---
+
+5. Datos
+--------
+
+**No hay datos de personas en este repositorio**, ni identificables ni
+seudonimizados. Se rigen por el contrato de datos del proyecto
+(`docs/14_data_management/`) y no se licencian aquí.
+
+---
+
+6. Marcas
+---------
+
+«SISAP by CENIVRA» y CENIVRA son denominaciones del proyecto. Los nombres de
+productos y organismos de terceros que aparecen en la documentación se citan con
+fines de referencia y pertenecen a sus titulares.
+
+---
+
+Cómo se mantiene este documento
+-------------------------------
+
+Cada vez que el proyecto incorpore material de terceros —un instrumento, una
+tipografía, una dependencia, un corpus— **se añade una fila aquí**. Un material sin
+fila es un material sin licencia declarada.
+
+_Pendientes de cerrar: los tres estados ⚠ y ✖ marcados arriba._

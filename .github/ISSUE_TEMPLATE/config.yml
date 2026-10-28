@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Reporte de Seguridad o Privacidad de Datos
+    url: https://github.com/cenivra/SISAP-by-CENIVRA/security/policy
+    about: Por favor reporte vulnerabilidades de seguridad y hallazgos de privacidad de forma privada conforme a nuestra política de divulgación responsable.
+  - name: Solicitud de Acceso a Inferencia Canónica (Institucional)
+    url: https://github.com/cenivra/SISAP-by-CENIVRA/discussions
+    about: Procedimiento formal para convenios de transferencia técnica, comités de bioética y evaluadores de SensorLab.

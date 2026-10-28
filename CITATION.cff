@@ -1,0 +1,46 @@
+# CITATION.cff — PENDIENTE DE CONFIRMACIÓN POR EL TITULAR
+# ---------------------------------------------------------------------------
+# Sigue el formato Citation File Format 1.2.0. La disciplina de este archivo es la
+# misma que la de `cenivra/interrelacion-modos-linguisticos`: los campos que NO se
+# pudieron verificar se marcan como  # TODO_CONFIRMAR  y no deben darse por buenos
+# sin revisión.
+#
+# Lo que NO se ha verificado aquí:
+#   * ORCID del autor (el que aparece abajo quedó comentado en el otro repositorio,
+#     así que no se da por confirmado)
+#   * afiliación exacta a declarar — se pone CENIVRA, que es la entidad del proyecto,
+#     pero hay además un vínculo clínico que el titular debe decidir si se declara
+#   * año y versión: el paquete está EN REVISIÓN, no liberado
+#   * si corresponde registrar el protocolo, y con qué número
+# ---------------------------------------------------------------------------
+cff-version: 1.2.0
+message: "Si usa este material, cite el software y su documentación."
+title: "SISAP by CENIVRA"
+abstract: >-
+  Sistema de captura, seguimiento y análisis clínico para comunidades terapéuticas
+  de adicciones. Sustituye el registro en papel de seis instrumentos psicológicos
+  por una captura estructurada que califica, normaliza y somete los datos a un
+  modelo multivariado de reducción de dimensionalidad, sin sacar la información de
+  las personas de la institución. El paquete contiene el código del sistema, su
+  expediente de software conforme a IEC 62304 y su documentación de decisiones, y
+  no contiene datos de personas.
+#
+# ESTADO: EN REVISIÓN. No es una versión liberada ni un producto sanitario con
+# expediente regulatorio cerrado. La clase de seguridad es B provisional.
+type: software
+authors:
+  - family-names: "Gutiérrez Castro"
+    given-names: "Lauro"
+    # orcid: "https://orcid.org/0009-0005-5207-9448"   # TODO_CONFIRMAR
+    affiliation: "CENIVRA"                            # TODO_CONFIRMAR
+version: "1.1.0"                     # TODO_CONFIRMAR — el paquete está en revisión
+date-released: "2026-09-28"          # TODO_CONFIRMAR
+year: 2026                           # TODO_CONFIRMAR
+license: MIT                         # el código; la documentación va bajo CC BY 4.0
+keywords:
+  - adicciones
+  - comunidades terapéuticas
+  - captura clínica
+  - psicometría
+  - reducción de dimensionalidad
+  - IEC 62304
