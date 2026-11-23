@@ -95,22 +95,22 @@ La aplicación se distribuye preconfigurada con cuentas sintéticas para evaluac
 
 ---
 
-## 5. Simulación Demostrativa del Autoencoder y Reserva de Pesos
+## 5. Plataforma de Inteligencia (5 Motores), Autoencoder Verificado y Centro Psicométrico (v1.1.0)
 
-> [!IMPORTANT]
-> **Aviso de Gobernanza de Modelos e Investigación:**
-> En estricto apego a las políticas de seguridad y gobernanza clínica de CENIVRA:
-> - **Los pesos auténticos de redes neuronales, autoencoders clínicos y matrices latentes entrenadas con cohortes reales están reservados** y **NO forman parte** del repositorio público ni de las descargas abiertas.
-> - La pestaña de **"Simulador Autoencoder"** incluida en esta distribución pública opera en **Modo Demostrativo Sintético**, utilizando una matriz de proyección ortonormal determinista basada en la Transformada de Coseno Discreta (DCT-II, $24 \times 12$).
-> - Esto permite a evaluadores y desarrolladores auditar la reactividad de la interfaz, el cálculo dimensional y la renderización de perfiles sin comprometer datos confidenciales ni modelos clínicos no autorizados para uso libre sin supervisión institucional.
+> [!NOTE]
+> El primer release histórico [**v1.0.0**](https://github.com/cenivra/SISAP-by-CENIVRA/releases/tag/v1.0.0) se conserva íntegro sin modificaciones. La línea **`release/1.1.0`** incorpora las siguientes capacidades verificadas:
+
+- **Autoencoder Funcional TUS (`engines/autoencoder/`)**: Pipeline determinista en 5 capas (JS ESM y R) con pesos y parámetros verificados mediante SHA-256 (`encoder_22_checkpoint_fase2`, `encoder_24_deployed` y prototipo confirmatorio `ae_tus_17to12_m3k12`), estricto cumplimiento D-06 (cero imputación silenciosa) y separación de `EROS` respecto a `tiempo_consumo`. El módulo **"Simulador Autoencoder"** continúa claramente separado para demostraciones sintéticas.
+- **Ecosistema de 5 Motores (`IntelligenceEcosystemView`)**: Combina Motor 1 (Autoencoder 12D y reconstrucción), Motor 2 (Trayectorias longitudinales y RCI), Motor 3 (Análisis narrativo contextual con degradación elegante si no hay runtime ONNX), Motor 4 (Integración multimodal) y Motor 5 (Soporte a decisiones bajo evidencia `E1–E5` y revisión humana obligatoria, sin diagnóstico automático).
+- **Centro de Evaluación Psicométrica Digital (`PsychometricCenterView`)**: Captura digital reactivo por reactivo con configuración versionada independiente de UI (`engines/psychometrics/catalog_v1.json`) para `BIS-11 (30)`, `BSL-23 (23)`, `GAD-7 (7)`, `EROS (10 / validación 9)`, `BADS-22 (v22 + compatibilidad v25)` y `STAXI-2 (49 TEA literales + estructura 57)`, manteniendo excluido `OCI-R` y almacenamiento inmutable en 3 niveles (`003_psychometric_center.sql`).
 
 ---
 
 ## 6. Arquitectura y Privacidad por Diseño
 
-1. **Soberanía de Datos Locales:** La persistencia principal se almacena en el equipo local del usuario en SQLite con soporte WAL (Write-Ahead Logging). Ningún dato de salud viaja a la nube por defecto.
+1. **Soberanía de Datos Locales:** La persistencia principal se almacena en el equipo local del usuario en SQLite con soporte WAL (Write-Ahead Logging) a través de 15 tablas relacionales verificadas (`001`–`003`). Ningún dato de salud viaja a la nube por defecto.
 2. **Separación de Identidad y Clínica:** El nombre e identidad de la persona nunca viajan en los registros clínicos; se gestionan mediante seudónimos técnicos (`id_paciente`).
-3. **Auditoría WORM (Write-Once, Read-Many):** Los eventos de auditoría y capturas clínicas son inmutables a nivel de disparadores SQL; la bitácora no admite modificaciones retroactivas ni eliminaciones.
+3. **Auditoría WORM (Write-Once, Read-Many):** Los eventos de auditoría (`audit_events`) e historial psicométrico completado (`completed`) están protegidos contra modificaciones retroactivas.
 4. **Resiliencia Operativa:** La integración opcional con Google Drive / Firebase es estrictamente voluntaria; si no se provee un archivo `firebase-applet-config.json`, la aplicación opera al 100% de manera autónoma y local.
 
 ---
@@ -120,22 +120,39 @@ La aplicación se distribuye preconfigurada con cuentas sintéticas para evaluac
 Dentro de [`sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza/`](sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza/):
 
 ```bash
-# Ejecutar suite de pruebas unitarias y de integración de la base de datos (15/15 tests)
+# Ejecutar suite de pruebas unitarias, psicométricas e integración (33/33 tests)
 npm test
 
 # Verificación de tipos TypeScript estricto (0 errores)
 npm run lint
 
-# Compilación de producción
+# Compilación de producción (Vite)
 npm run build
+```
+
+Para la verificación científica en R del pipeline del Autoencoder (`engines/autoencoder/tests/`):
+```powershell
+foreach ($t in Get-ChildItem engines/autoencoder/tests/test_*.R) { Rscript $t.FullName }
 ```
 
 ---
 
-## 8. Licencia y Soporte
+## 8. Licencia, Historial de Versiones y Soporte
 
 - **Código Fuente:** Licencia [MIT](LICENSE).
 - **Documentación:** Licencia [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE).
+- **Registro de Cambios y Release Notes:**
+  - [CHANGELOG.md](CHANGELOG.md)
+  - [Notas de Publicación v1.1.0](docs/11_release_and_maintenance/RELEASE_NOTES_v1.1.0.md)
 - **Expediente Documental:** Consulte el directorio [`docs/`](docs/) para revisiones de diseño según directrices IEC 62304 / ISO aplicables.
+- **Verificación del Autoencoder y Plataforma de Inteligencia (5 Motores):**
+  - [A · Informe de Comprobación del Autoencoder](docs/19_autoencoder_verification_and_intelligence_platform/A_INFORME_COMPROBACION_AUTOENCODER.md)
+  - [B · Mapa de Artefactos Integrados](docs/19_autoencoder_verification_and_intelligence_platform/B_MAPA_ARTEFACTOS_INTEGRADOS.md)
+  - [C · Diagnóstico Arquitectónico de SISAP](docs/19_autoencoder_verification_and_intelligence_platform/C_DIAGNOSTICO_ARQUITECTONICO_SISAP.md)
+  - [D · Catálogo de Skills Utilizadas](docs/19_autoencoder_verification_and_intelligence_platform/D_CATALOGO_SKILLS_UTILIZADAS.md)
+  - [E · Arquitectura de Plataforma de Inteligencia](docs/19_autoencoder_verification_and_intelligence_platform/E_ARQUITECTURA_PLATAFORMA_INTELIGENCIA.md)
+  - [F · Hoja de Ruta Técnica](docs/19_autoencoder_verification_and_intelligence_platform/F_HOJA_DE_RUTA_TECNICA.md)
+- **Centro de Evaluación Psicométrica (Captura Digital y Configuración Versionada):**
+  - [Arquitectura, Fuentes Autorizadas y Materiales Pendientes](docs/20_psychometric_evaluation_center/ARQUITECTURA_Y_MATERIALES_CENTRO_PSICOMETRICO.md)
 - **Aviso de Privacidad:** Consulte [`PRIVACY.md`](PRIVACY.md).
 - **Política de Seguridad:** Consulte [`SECURITY.md`](SECURITY.md).
