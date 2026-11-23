@@ -40,6 +40,7 @@ Se recomienda **`v1.1.0` (MINOR)** porque todas las capacidades incorporadas amp
   - Almacenamiento en 3 niveles (`003_psychometric_center.sql`: `psychometric_evaluations`, `psychometric_item_responses`, `psychometric_results`) con bloqueo `HTTP 409 Conflict` contra sobrescritura de evaluaciones completadas, recálculo no destructivo por versión de algoritmo y detección automática de mezcla de versiones longitudinales (`versionMismatchWarning`).
   - Interfaz clínica [`PsychometricCenterView.tsx`](sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza/src/components/views/PsychometricCenterView.tsx) adaptable a escritorio y tableta (borradores, progreso, filtro de pendientes, navegación por bloques o página única, revisión pre-envío e historial longitudinal).
 - **Documentación y Pruebas**:
+  - Sistema documental centralizado conforme a procesos de **IEC 62304:2006 + AMD1:2015** en `docs/lifecycle/` (`SISAP-LC-000` a `SISAP-LC-018`) y expedientes técnicos modulares en `docs/modules/` (`SISAP-MOD-*`), incluyendo SRS, SAD, expediente de riesgos, clasificación A/B/C en evaluación, matriz bidireccional, inventario SOUP y reporte de estado de cumplimiento.
   - `docs/19_autoencoder_verification_and_intelligence_platform/` (entregables A–F).
   - `docs/20_psychometric_evaluation_center/ARQUITECTURA_Y_MATERIALES_CENTRO_PSICOMETRICO.md`.
   - `docs/11_release_and_maintenance/RELEASE_NOTES_v1.1.0.md`.

@@ -1,5 +1,8 @@
 # SISAP by CENIVRA
 
+> [!NOTE]
+> **Control Documental (Fuente Única de Verdad `v1.1.0`):** Este archivo se conserva como registro histórico de la fase conceptual inicial (`v1.0`, agosto 2026, Python / Dash). La Matriz de Trazabilidad Bidireccional **vigente para `v1.1.0`** reside en [`BIDIRECTIONAL_TRACEABILITY_MATRIX.md`](../lifecycle/15_traceability/BIDIRECTIONAL_TRACEABILITY_MATRIX.md) y la evaluación de clasificación de seguridad en [`RISK_MANAGEMENT_FILE_v1.1.md`](../lifecycle/04_risk_management/RISK_MANAGEMENT_FILE_v1.1.md).
+
 # Software Traceability and Safety Classification
 
 **Documento:** Software Traceability and Safety Classification  

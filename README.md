@@ -144,7 +144,12 @@ foreach ($t in Get-ChildItem engines/autoencoder/tests/test_*.R) { Rscript $t.Fu
 - **Registro de Cambios y Release Notes:**
   - [CHANGELOG.md](CHANGELOG.md)
   - [Notas de Publicación v1.1.0](docs/11_release_and_maintenance/RELEASE_NOTES_v1.1.0.md)
-- **Expediente Documental:** Consulte el directorio [`docs/`](docs/) para revisiones de diseño según directrices IEC 62304 / ISO aplicables.
+- **Sistema Documental del Ciclo de Vida (IEC 62304:2006 + AMD1:2015):**
+  - *Desarrollado siguiendo procesos basados en IEC 62304 · Documentación alineada con IEC 62304 · Evaluación de conformidad en curso (no constituye certificación de dispositivo médico).*
+  - [Índice Maestro de Control Documental y Cumplimiento (`SISAP-LC-000`)](docs/lifecycle/00_document_control/DOCUMENT_CONTROL_AND_COMPLIANCE_INDEX.md)
+  - [Informe de Estado del Ciclo de Vida (`SISAP-LC-017`)](docs/lifecycle/17_lifecycle_reviews/LIFECYCLE_COMPLIANCE_STATUS_REPORT.md)
+  - Expedientes centralizados en [`docs/lifecycle/`](docs/lifecycle/) (00–18) y diseño detallado por módulo en [`docs/modules/`](docs/modules/) (`autoencoder`, `psychometric_center`, `longitudinal_analytics`, `narrative_intelligence`, `multimodal_integration`, `decision_support`).
+- **Archivo Histórico Documental (`docs/`):** Consulte [`docs/00_..18/`](docs/) para la fase conceptual inicial y trazabilidad regulatoria mexicana.
 - **Verificación del Autoencoder y Plataforma de Inteligencia (5 Motores):**
   - [A · Informe de Comprobación del Autoencoder](docs/19_autoencoder_verification_and_intelligence_platform/A_INFORME_COMPROBACION_AUTOENCODER.md)
   - [B · Mapa de Artefactos Integrados](docs/19_autoencoder_verification_and_intelligence_platform/B_MAPA_ARTEFACTOS_INTEGRADOS.md)

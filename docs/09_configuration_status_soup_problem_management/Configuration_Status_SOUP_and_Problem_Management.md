@@ -1,5 +1,8 @@
 # SISAP by CENIVRA
 
+> [!NOTE]
+> **Control Documental (Fuente Única de Verdad `v1.1.0`):** Este archivo se conserva como registro histórico de la fase conceptual inicial (`v1.0`, agosto 2026, Python / Dash). Las especificaciones **vigentes para `v1.1.0`** residen en [`CONFIGURATION_BASELINE_v1.1.0.md`](../lifecycle/14_configuration_management/CONFIGURATION_BASELINE_v1.1.0.md), [`SOUP_INVENTORY_AND_EVALUATION.md`](../lifecycle/16_supplier_and_SOUP/SOUP_INVENTORY_AND_EVALUATION.md) y [`PROBLEM_RESOLUTION_LOG.md`](../lifecycle/13_problem_resolution/PROBLEM_RESOLUTION_LOG.md).
+
 # Configuration Status, SOUP and Problem Management
 
 **Documento:** Configuration Status, SOUP and Problem Management  

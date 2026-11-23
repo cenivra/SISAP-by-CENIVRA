@@ -1,5 +1,8 @@
 # SISAP by CENIVRA
 
+> [!NOTE]
+> **Control Documental (Fuente Única de Verdad `v1.1.0`):** Este archivo se conserva como registro histórico de la fase conceptual inicial (`v1.0`, agosto 2026, Python / Dash). El Expediente de Gestión de Riesgos y evaluación de clasificación de seguridad A/B/C **vigente para `v1.1.0`** reside en [`docs/lifecycle/04_risk_management/RISK_MANAGEMENT_FILE_v1.1.md`](../lifecycle/04_risk_management/RISK_MANAGEMENT_FILE_v1.1.md).
+
 # Software Risk Management File
 
 **Documento:** Software Risk Management File  

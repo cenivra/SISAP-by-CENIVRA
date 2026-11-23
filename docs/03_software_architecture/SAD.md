@@ -1,5 +1,8 @@
 # SISAP by CENIVRA
 
+> [!NOTE]
+> **Control Documental (Fuente Única de Verdad `v1.1.0`):** Este archivo se conserva como registro histórico de la fase conceptual inicial (`v1.0`, agosto 2026, Python / Dash). La Arquitectura de Software **vigente para `v1.1.0` (Electron + React + Node.js SQLite WAL 15 tablas + R)** y el diseño detallado por módulo residen en [`docs/lifecycle/05_software_architecture/SOFTWARE_ARCHITECTURE_v1.1.md`](../lifecycle/05_software_architecture/SOFTWARE_ARCHITECTURE_v1.1.md) y `docs/modules/`.
+
 # Software Architecture Description — SAD
 
 **Documento:** Software Architecture Description  
