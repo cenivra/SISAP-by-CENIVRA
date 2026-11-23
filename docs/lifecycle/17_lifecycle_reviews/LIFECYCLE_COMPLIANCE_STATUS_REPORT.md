@@ -12,13 +12,14 @@
 | **Última actualización** | 2026-11-23 |
 | **Autor / Responsable** | Equipo de Ingeniería y Calidad — SISAP by CENIVRA |
 | **Revisor y aprobación** | **Pendiente de revisión formal por Dirección Clínica y Calidad** |
-| **Documentos relacionados** | `SISAP-LC-000..018` · `docs/modules/*` |
+| **Documentos relacionados** | `SISAP-LC-000..018` · `docs/modules/*` · `SISAP-QA-001..010` |
 
 ### Historial de Cambios
 
 | Versión | Fecha | Descripción | Responsable |
 |---|---|---|---|
 | `1.1.0-draft` | 2026-11-23 | Emisión del informe integral del estado del ciclo de vida conforme a la Sección 15 del requisito transversal IEC 62304. | Equipo de Ingeniería SISAP |
+| `1.1.0-draft` | 2026-11-23 | Integración del sistema de análisis estático, seguridad CI/CD, monitorización soberana anti-PHI, cobertura `87.38%` y `12/12` E2E Chromium (`SISAP-QA-001..010`) más resolución `PRB-008`. | Equipo de Calidad e Ingeniería SISAP |
 
 ---
 
@@ -40,9 +41,9 @@
 | **§5.2 Requisitos (SRS)** | **Implementado** | `SISAP-LC-003` (`REQ-CORE/AE/PSYC/LONG/NARR/MM/DSS/SEC/PRIV/AVAIL/PERF/UX/INT/TRAC`). | Cerrar ítems parciales de campo/red (`REQ-AE-008`, `REQ-SEC-004`, `REQ-UX-001`). |
 | **§5.3 Arquitectura (SAD)** | **Implementado** | `SISAP-LC-005` con 4 diagramas Mermaid actualizados al stack Electron/React/Node/SQLite/R. | Revisar diagrama cuando evolucione a red multiusuario. |
 | **§5.4 Diseño detallado** | **Implementado** | `SISAP-LC-006` + 6 expedientes detallados bajo `docs/modules/*`. | Completar enunciados `STAXI-2 50–57` y suplemento `BSL-23` al obtener licencia editorial. |
-| **§5.5 Implementación y unidad** | **Implementado** | `SISAP-LC-007` + `33/33 PASS` Node + `4/4` unitarias R `PASS` + `tsc` 0 errores. | Mantener cobertura ante nuevas versiones del catálogo. |
-| **§5.6 Integración y pruebas** | **Implementado** | `SISAP-LC-009` + pruebas de integración API/BD/Motores/Psicometría. | N/A |
-| **§5.7 Pruebas del sistema** | **Parcial** | `SISAP-LC-010` + expediente comparativo `v1.0.0` vs `v1.1.0` (`SISAP-VV-INST-100/110`, `SISAP-VV-CMP-001`, `SISAP-VV-REG-110`, `SISAP-VV-NEW-110`: build `2.15s`/`2.27s`, BD migrada `15` tablas OK). | Ejecutar prueba de usabilidad clínica/GUI observada en campo y prueba de humo sobre el `.exe` NSIS `v1.1.0`. |
+| **§5.5 Implementación y unidad** | **Implementado** | `SISAP-LC-007` + `41/41 PASS` JS/TS (`test:all`, LCOV `87.38%` en 30 módulos) + `4/4` unitarias R `PASS` + `tsc` 0 errores + `qa:audit`. | Mantener cobertura ante nuevas versiones del catálogo y elevar `modelRunService.js`. |
+| **§5.6 Integración y pruebas** | **Implementado** | `SISAP-LC-009` + pruebas de integración API/BD/Motores/Psicometría y `12/12` E2E Chromium (`SISAP-QA-008`). | N/A |
+| **§5.7 Pruebas del sistema** | **Parcial** | `SISAP-LC-010`, `SISAP-QA-008` (`qa:full`, `12/12` E2E Chromium, `test:coverage` `87.38%`) y expediente comparativo `v1.0.0` vs `v1.1.0` (`SISAP-VV-*`). | Ejecutar prueba de usabilidad clínica/GUI observada en campo y prueba de humo sobre el `.exe` NSIS `v1.1.0`. |
 | **§5.8 Liberación del software** | **Parcial** | `SISAP-LC-011`, `SISAP-VV-RDY-110` (10/10 criterios técnicos evaluados), `CHANGELOG.md`, `RELEASE_NOTES_v1.1.0.md` en `release/1.1.0` con `v1.0.0` intacto. | Obtener aprobación formal, compilar `.exe` `v1.1.0`, crear tag y publicar borrador cuando se autorice. |
 | **§6 Mantenimiento** | **Implementado** | `SISAP-LC-012` con flujo de análisis de impacto, riesgo, regresión y SemVer. | Aplicar ante solicitudes posteriores a `v1.1.0`. |
 | **§8 Gestión de configuración y SOUP** | **Implementado** | `SISAP-LC-014` (commits, SHA-256 modelos, migraciones) y `SISAP-LC-016` (inventario SOUP `package-lock.json`). | Auditar periódicamente CVEs de dependencias npm y Node LTS. |
@@ -57,9 +58,10 @@
 - **Documentos heredados de fase conceptual / contextual (`docs/00_..18_`):**
   - `docs/00` a `docs/15`: borrador histórico Python/Dash (agosto 2026) alineado ahora mediante notas de control que remiten a `docs/lifecycle/` como SSOT vigente.
   - `docs/16` a `docs/20`: diseño escritorio, diseño UX/UI, regulación mexicana (`REG-001`, `REG-DOC-DCSA-DICO-001`), verificación Autoencoder (`A..F`) y Centro Psicométrico (`ARQUITECTURA_Y_MATERIALES_CENTRO_PSICOMETRICO.md`).
-- **Documentos nuevos creados en esta actividad (32 documentos controlados sin carpetas vacías):**
+- **Documentos nuevos creados en esta actividad (42 documentos controlados sin carpetas vacías):**
   - 19 documentos maestros bajo `docs/lifecycle/00` a `18` (`SISAP-LC-000` a `SISAP-LC-018`).
   - 7 informes de verificación e instalación comparativa `v1.0.0` vs `v1.1.0` bajo `docs/lifecycle/10_system_testing/version_comparison_v1.0.0_vs_v1.1.0/` (`SISAP-VV-*`).
+  - 10 documentos de infraestructura QA, análisis estático, CI/CD, seguridad, evaluación Cloudflare, cobertura y E2E bajo `docs/lifecycle/08_verification_and_validation/qa_infrastructure/` (`SISAP-QA-001` a `SISAP-QA-010`).
   - 6 expedientes técnicos modulares bajo `docs/modules/*` (`SISAP-MOD-AE-001`, `PSYC-001`, `LONG-001`, `NARR-001`, `MM-001`, `DSS-001`).
 - **Documentos o evidencias externas pendientes:**
   - Actas de aprobación formal firmadas por responsables clínicos y de calidad (para promover documentos de `En revisión` a `Aprobado`).

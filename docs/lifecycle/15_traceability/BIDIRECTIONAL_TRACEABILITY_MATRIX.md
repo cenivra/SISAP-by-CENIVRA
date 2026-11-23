@@ -12,13 +12,14 @@
 | **Última actualización** | 2026-11-23 |
 | **Autor / Responsable** | Equipo de Calidad e Ingeniería — SISAP by CENIVRA |
 | **Revisor y aprobación** | **Pendiente de revisión formal** |
-| **Documentos relacionados** | `SISAP-LC-003` · `SISAP-LC-004` · `SISAP-LC-005` · `SISAP-LC-008..011` · `docs/modules/*` |
+| **Documentos relacionados** | `SISAP-LC-003` · `SISAP-LC-004` · `SISAP-LC-005` · `SISAP-LC-008..011` · `docs/modules/*` · `SISAP-QA-001..010` |
 
 ### Historial de Cambios
 
 | Versión | Fecha | Descripción | Responsable |
 |---|---|---|---|
 | `1.1.0-draft` | 2026-11-23 | Matriz bidireccional completa que enlaza cada requisito `REQ-*` con diseño, implementación, riesgo `RSK-*`, control, prueba, resultado real y release en `release/1.1.0`. | Equipo de Ingeniería SISAP |
+| `1.1.0-draft` | 2026-11-23 | Enlace de controles de aseguramiento de calidad (`qa:audit`, `MON-01..02`, `FE-01..05`, `T-04b`, `E2E-01..12` y `SISAP-QA-001..010`). | Equipo de Calidad SISAP |
 
 ---
 
@@ -70,4 +71,5 @@
 | `analyticalService.js`, `narrativeService.js`, `multimodalService.js`, `decisionSupportService.js` + `intelligence_motors.test.js` (`MOT-01..02`) | `REQ-LONG-001..003`, `REQ-NARR-001..002`, `REQ-MM-001`, `REQ-DSS-001` | `RSK-002`, `RSK-006`, `RSK-007`, `RSK-009` |
 | `security.js`, `logger.js`, `auditService.js`, `electron/main.cjs` + `security.test.js`, `db.test.js`, `patients.test.js` | `REQ-CORE-001..003`, `REQ-SEC-001..004`, `REQ-PRIV-001..002`, `REQ-AVAIL-001`, `REQ-TRAC-001` | `RSK-003`, `RSK-005`, `RSK-008` |
 | `LatentIntervalChart.tsx`, `ReconstructionBarsChart.tsx`, `IntelligenceEcosystemView.tsx`, `PsychometricCenterView.tsx` | `REQ-AE-005`, `REQ-PSYC-002`, `REQ-DSS-001`, `REQ-UX-001` | `RSK-001`, `RSK-009`, `RSK-010` |
-| `CHANGELOG.md`, `RELEASE_NOTES_v1.1.0.md`, `docs/lifecycle/*`, `docs/modules/*` | Trazabilidad integral del ciclo de vida IEC 62304 y preservación `v1.0.0` | `RSK-011`, `RSK-012` |
+| `telemetryService.ts`, `monitoringService.js`, `qa-static-audit.mjs`, `run-chromium-e2e.mjs`, `sisap-flows.spec.ts`, `.github/workflows/*` | `REQ-SEC-001..003`, `REQ-PRIV-001..002`, `REQ-TRAC-001`, verificación sistema `v1.1.0` | `QA-RSK-01..07`, `RSK-005`, `RSK-008`, `RSK-011` |
+| `CHANGELOG.md`, `RELEASE_NOTES_v1.1.0.md`, `docs/lifecycle/*`, `docs/modules/*`, `docs/lifecycle/08_verification_and_validation/qa_infrastructure/*` (`SISAP-QA-001..010`) | Trazabilidad integral del ciclo de vida IEC 62304, aseguramiento QA y preservación `v1.0.0` | `RSK-011`, `RSK-012` |

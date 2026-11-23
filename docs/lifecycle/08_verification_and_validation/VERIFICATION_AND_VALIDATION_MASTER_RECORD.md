@@ -12,13 +12,14 @@
 | **Última actualización** | 2026-11-23 |
 | **Autor / Responsable** | Responsable de Verificación y Calidad — SISAP by CENIVRA |
 | **Revisor y aprobación** | **Pendiente de revisión formal** |
-| **Documentos relacionados** | `SISAP-LC-002` · `SISAP-LC-007` · `SISAP-LC-009` · `SISAP-LC-010` · `SISAP-LC-015` |
+| **Documentos relacionados** | `SISAP-LC-002` · `SISAP-LC-007` · `SISAP-LC-009` · `SISAP-LC-010` · `SISAP-LC-015` · `SISAP-QA-001..010` |
 
 ### Historial de Cambios
 
 | Versión | Fecha | Descripción | Responsable |
 |---|---|---|---|
 | `1.1.0-draft` | 2026-11-23 | Registro consolidado diferenciando pruebas automatizadas ejecutadas, pruebas manuales pendientes y pruebas no aplicables con justificación. | Equipo de Ingeniería SISAP |
+| `1.1.0-draft` | 2026-11-23 | Ampliación con `41/41` pruebas JS+TS (`MON-01..02`, `FE-01..05`, `T-04b`), cobertura LCOV `87.38%` (`30` módulos), `12/12` flujos E2E reales en Chromium y expediente `SISAP-QA-001..010`. | Equipo de Calidad e Ingeniería SISAP |
 
 ---
 
@@ -36,7 +37,8 @@ Ninguna prueba se marca como `APROBADA` sin evidencia de ejecución real posteri
 
 | Categoría (Sección 9) | Identificador / Suite | Tipo | Estado Real | Evidencia / Justificación |
 |---|---|---|---|---|
-| **Pruebas unitarias JS** | `AE-01..05`, `PSYC-02..09`, `T-04,06,08,09,10`, `security.test.js` | Automatizada | **PASS** | `npm test` (`33/33 PASS`, `fail 0`, `1231.68 ms`) |
+| **Pruebas unitarias JS y TS (`backend` + `src`)** | `AE-01..05`, `PSYC-02..09`, `T-04,04b,06,08,09,10`, `security.test.js`, `MON-01..02`, `FE-01..05` | Automatizada | **PASS** | `npm run test:all` (`41/41 PASS`, `fail 0`) + `test:coverage` (`87.38%` líneas en 30 módulos) |
+| **Pruebas E2E en navegador real (Chromium)** | `E2E-01`..`E2E-12` (`e2e/run-chromium-e2e.mjs` y `e2e/sisap-flows.spec.ts`) | Automatizada | **PASS** | `npm run test:e2e` (**`12/12 PASS`** en `chrome.exe` real contra `dist/` + SQLite WAL aislado + reinicio de backend; detalle en [`SISAP-QA-008`](qa_infrastructure/08_TEST_COVERAGE_AND_E2E_EXECUTION_REPORT.md)) |
 | **Pruebas unitarias R** | `test_esquema_datos.R`, `test_scoring_escalas.R`, `test_preprocesamiento.R`, `test_dimensiones_latentes.R` | Automatizada | **PASS** | `Rscript.exe` exit code `0` en las 4 suites |
 | **Pruebas de integración API/BD/Motores** | `AE-06`, `MOT-01`, `MOT-02`, `PSYC-01`, `PSYC-10`, `PSYC-11`, `T-07` | Automatizada | **PASS** | Cubiertas en `npm test` (`33/33 PASS`), detalladas en `SISAP-LC-009` |
 | **Pruebas de persistencia y migración** | `T-01`, `T-02` + ciclo limpio temporal (`init-db.js` → `seed-fixtures.js` → `health.js`) | Automatizada | **PASS** | `migrationsApplied: 3`, `tables: 15`, `missingTables: []`, `foreignKeysEnabled: true`, `ok: true` |

@@ -20,6 +20,7 @@
 | Versión | Fecha | Descripción | Responsable |
 |---|---|---|---|
 | `1.1.0-draft` | 2026-11-23 | Creación del índice maestro centralizado bajo `docs/lifecycle/` y `docs/modules/` reflejando el stack real de producción `v1.1.0` (Electron + React + Node.js SQLite + R) y el inventario de brechas respecto a `docs/00..15` (Python/Dash, ago 2026). | Equipo de Ingeniería SISAP |
+| `1.1.0-draft` | 2026-11-23 | Incorporación del expediente de infraestructura QA, análisis estático, cobertura LCOV, E2E Chromium y monitorización soberana (`SISAP-QA-001..010`) y cierre `PRB-008`. | Equipo de Ingeniería y Calidad SISAP |
 
 ### Documentos Relacionados
 - [`SISAP-LC-001` — Evaluación de Aplicabilidad Regulatoria y Uso Previsto](../01_intended_use_and_scope/REGULATORY_SCOPE_AND_INTENDED_USE.md)
@@ -53,6 +54,7 @@
 | `docs/lifecycle/06_detailed_design/` | `SISAP-LC-006` | `DETAILED_DESIGN_OVERVIEW.md` | En revisión | Diseño detallado transversal y mapa de unidades §5.4 |
 | `docs/lifecycle/07_implementation/` | `SISAP-LC-007` | `IMPLEMENTATION_AND_UNIT_VERIFICATION.md` | En revisión | Unidades, revisión de código y pruebas unitarias §5.5 |
 | `docs/lifecycle/08_verification_and_validation/` | `SISAP-LC-008` | `VERIFICATION_AND_VALIDATION_MASTER_RECORD.md` | En revisión | Plan y estado maestro V&V (ejecutadas vs pendientes) |
+| `docs/lifecycle/08_verification_and_validation/qa_infrastructure/` | `SISAP-QA-001..010` | `01_TOOL_COMPATIBILITY...` a `10_RELEASE_v1.1.0_QA_READINESS_REPORT.md` | En revisión | Análisis estático, SonarCloud, ESLint, CodeQL, Dependabot, CI Actions, evaluación Cloudflare, cobertura `87.38%`, `12/12` E2E Chromium y monitorización anti-PHI |
 | `docs/lifecycle/09_integration_testing/` | `SISAP-LC-009` | `INTEGRATION_TEST_REPORT_v1.1.md` | En revisión | Registro de pruebas de integración §5.6 |
 | `docs/lifecycle/10_system_testing/` | `SISAP-LC-010` | `SYSTEM_TEST_REPORT_v1.1.md` | En revisión | Registro de pruebas de sistema, build y BD limpia §5.7 |
 | `docs/lifecycle/11_release_and_deployment/` | `SISAP-LC-011` | `RELEASE_DOSSIER_v1.1.0.md` | En revisión | Expediente de liberación y reversión §5.8 |
@@ -84,9 +86,9 @@
 | **5.2** | Análisis de requisitos de software (SRS) | **Implementado** | `SISAP-LC-003` con identificadores `REQ-*`, criterios de aceptación y vínculo a pruebas. |
 | **5.3** | Diseño arquitectónico | **Implementado** | `SISAP-LC-005` con diagramas reales de componentes, despliegue, BD (15 tablas) y secuencia. |
 | **5.4** | Diseño detallado | **Implementado** | `SISAP-LC-006` + 6 expedientes en `docs/modules/*`. |
-| **5.5** | Implementación y verificación de unidades | **Implementado** | Pruebas automatizadas Node (`33/33 PASS`) y R (`4/4` unitarias PASS) en `SISAP-LC-007`. |
-| **5.6** | Integración y pruebas de integración | **Implementado** | Pruebas extremo a extremo API/DB/Motores/UI compilada en `SISAP-LC-009`. |
-| **5.7** | Pruebas del sistema | **Parcial** | `npm test`, `npm run lint`, `vite build` y BD limpia PASS; faltan pruebas formales de usabilidad clínica en campo y compilación final `.exe` `v1.1.0`. |
+| **5.5** | Implementación y verificación de unidades | **Implementado** | Pruebas automatizadas Node+TS (`41/41 PASS`, LCOV `87.38%` líneas en 30 módulos) y R (`4/4` unitarias PASS) en `SISAP-LC-007` y `SISAP-QA-008`. |
+| **5.6** | Integración y pruebas de integración | **Implementado** | Pruebas extremo a extremo API/DB/Motores/UI compilada y E2E Chromium (`12/12 PASS`) en `SISAP-LC-009` y `SISAP-QA-008`. |
+| **5.7** | Pruebas del sistema | **Parcial** | `npm run qa:full`, `qa:audit`, `test:coverage` (`87.38%`), `test:e2e` (`12/12 PASS`) y BD limpia PASS; faltan pruebas formales de usabilidad clínica en campo y compilación final `.exe` `v1.1.0`. |
 | **5.8** | Liberación del software | **Parcial** | `SISAP-LC-011` y `RELEASE_NOTES_v1.1.0.md` preparados en `release/1.1.0`; aprobación final y generación de instalador pendientes antes de taguear `v1.1.0`. |
 | **6** | Mantenimiento de software | **Implementado** | Procedimiento formal documentado en `SISAP-LC-012` y preservación verificada de `v1.0.0`. |
 | **7** | Proceso de gestión de riesgos de software | **Parcial** | Matriz peligro → control → verificación en `SISAP-LC-004` y `SISAP-LC-015`; revisión independiente pendiente. |
