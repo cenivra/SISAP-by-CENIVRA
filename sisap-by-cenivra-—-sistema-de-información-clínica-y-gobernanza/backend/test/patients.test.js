@@ -35,6 +35,15 @@ test('T-04: búsqueda parametrizada por nombre', () => {
   assert.ok(res.length <= 10, 'respeta el límite de 10');
 });
 
+test('T-04b: búsqueda parametrizada exacta por seudónimo TUS-XXXX (PRB-008)', () => {
+  const byName = patients.searchPatients('PRUEBA ALFA');
+  assert.ok(byName.length >= 1);
+  const targetPseudo = byName[0].pseudonym;
+  const byPseudo = patients.searchPatients(targetPseudo.toLowerCase());
+  assert.equal(byPseudo.length, 1);
+  assert.equal(byPseudo[0].pseudonym, targetPseudo);
+});
+
 test('T-06b: prevención de duplicados sin confirmación', () => {
   assert.throws(
     () => patients.createPatient({ nombre_completo: 'PACIENTE PRUEBA ALFA', estado: 'Residencial' }),

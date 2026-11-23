@@ -12,7 +12,7 @@ import { getDatabase } from '../db/index.js';
 import { uuid, normalizeName, duplicateFingerprint } from '../utils/crypto.js';
 import { Errors } from '../utils/errors.js';
 
-const PSEUDONYM_RE = /^TUS-\d{4,}$/;
+const PSEUDONYM_RE = /^TUS-\d{3,}$/i;
 
 function nextPseudonym(db) {
   const row = db
@@ -32,14 +32,28 @@ export function searchPatients(query, { limit = 10 } = {}) {
   const norm = normalizeName(query);
 
   // Búsqueda por CURP si el término parece una CURP
-  const looksLikeCurp = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(String(query).toUpperCase().trim());
+  const queryUpper = String(query ?? '').toUpperCase().trim();
+  const looksLikeCurp = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(queryUpper);
   if (looksLikeCurp) {
     return db
       .prepare(
         `SELECT patient_id, pseudonym, nombre_completo, estado, actualizado_en, es_dato_prueba
          FROM patients WHERE curp = ? ORDER BY actualizado_en DESC LIMIT ?`
       )
-      .all(String(query).toUpperCase().trim(), Math.min(limit, 10));
+      .all(queryUpper, Math.min(limit, 10));
+  }
+
+  // Búsqueda exacta por seudónimo institucional TUS-XXXX (sin enumeración masiva)
+  if (PSEUDONYM_RE.test(queryUpper)) {
+    return db
+      .prepare(
+        `SELECT patient_id, pseudonym, nombre_completo, estado, actualizado_en, es_dato_prueba
+         FROM patients
+         WHERE UPPER(pseudonym) = ? AND activo = 1
+         ORDER BY actualizado_en DESC
+         LIMIT ?`
+      )
+      .all(queryUpper, Math.min(limit, 10));
   }
 
   if (norm.length < 2) {
