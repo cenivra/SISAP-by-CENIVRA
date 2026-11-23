@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-electron
+coverage
+playwright-report
+test-results
+engines/autoencoder/models
+engines/autoencoder/preprocessing
+engines/autoencoder/evaluation
+engines/psychometrics
+firebase-applet-config.json
