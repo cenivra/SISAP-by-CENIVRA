@@ -37,8 +37,9 @@
   3. Centro de Evaluación Psicométrica Digital con catálogo de 6 escalas, exclusión de `OCI-R`, almacenamiento en 3 niveles y equivalencia numérica (`b9e94d7`).
   4. Documentación de versión `CHANGELOG.md`, `RELEASE_NOTES_v1.1.0.md` y expediente del ciclo de vida IEC 62304 (`7bca47e` + commit ciclo de vida).
 - **Requisitos implementados:** Trazados en `SISAP-LC-003` y `SISAP-LC-015` (`REQ-CORE-001..004`, `REQ-AE-001..007`, `REQ-PSYC-001..010`, `REQ-LONG-001..003`, `REQ-NARR-001..002`, `REQ-MM-001`, `REQ-DSS-001`, `REQ-SEC-001..003`, `REQ-PRIV-001..002`, `REQ-AVAIL-001`, `REQ-PERF-001`, `REQ-INT-001`, `REQ-TRAC-001`; parciales declarados: `REQ-AE-008`, `REQ-SEC-004`, `REQ-UX-001`).
-- **Defectos resueltos:** `PRB-001` (`STAXI-2` 1..49), `PRB-002` (`EROS` vs `tiempo_consumo`), `PRB-003` (denominador `BSL-23` = 136), `PRB-004` (`ENCODER_PROJECTION_WEIGHTS` demo retirada), `PRB-005` (detección honesta ONNX), `PRB-006` (regresión histórica `N=166` vs `D-06`), documentados en `SISAP-LC-013`.
+- **Defectos resueltos:** `PRB-001` (`STAXI-2` 1..49), `PRB-002` (`EROS` vs `tiempo_consumo`), `PRB-003` (denominador `BSL-23` = 136), `PRB-004` (`ENCODER_PROJECTION_WEIGHTS` demo retirada), `PRB-005` (detección honesta ONNX), `PRB-006` (regresión histórica `N=166` vs `D-06`), `PRB-007` (carga opcional de `firebase-applet-config.json` en build limpio), documentados en `SISAP-LC-013` y `SISAP-VV-ISS-110`.
 - **Riesgos revisados:** `RSK-001` a `RSK-012` evaluados en `SISAP-LC-004`.
+- **Expediente comparativo `v1.0.0` vs `v1.1.0`:** [`version_comparison_report.md`](../10_system_testing/version_comparison_v1.0.0_vs_v1.1.0/version_comparison_report.md) y [`release_readiness_report.md`](../10_system_testing/version_comparison_v1.0.0_vs_v1.1.0/release_readiness_report.md) (incluye migración `v1.0.0 → v1.1.0` y reversión comprobadas en Entorno C).
 
 ---
 

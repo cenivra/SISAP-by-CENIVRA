@@ -42,11 +42,11 @@
 | **§5.4 Diseño detallado** | **Implementado** | `SISAP-LC-006` + 6 expedientes detallados bajo `docs/modules/*`. | Completar enunciados `STAXI-2 50–57` y suplemento `BSL-23` al obtener licencia editorial. |
 | **§5.5 Implementación y unidad** | **Implementado** | `SISAP-LC-007` + `33/33 PASS` Node + `4/4` unitarias R `PASS` + `tsc` 0 errores. | Mantener cobertura ante nuevas versiones del catálogo. |
 | **§5.6 Integración y pruebas** | **Implementado** | `SISAP-LC-009` + pruebas de integración API/BD/Motores/Psicometría. | N/A |
-| **§5.7 Pruebas del sistema** | **Parcial** | `SISAP-LC-010` (`vite build` `2.93s`, BD limpia `15` tablas OK, higiene PHI/rutas limpia). | Ejecutar prueba de usabilidad clínica en campo y prueba de humo sobre el `.exe` NSIS `v1.1.0`. |
-| **§5.8 Liberación del software** | **Parcial** | `SISAP-LC-011`, `CHANGELOG.md`, `RELEASE_NOTES_v1.1.0.md` en rama aislada `release/1.1.0` con `v1.0.0` intacto. | Obtener aprobación formal, compilar `.exe` `v1.1.0`, crear tag y publicar borrador cuando se autorice. |
+| **§5.7 Pruebas del sistema** | **Parcial** | `SISAP-LC-010` + expediente comparativo `v1.0.0` vs `v1.1.0` (`SISAP-VV-INST-100/110`, `SISAP-VV-CMP-001`, `SISAP-VV-REG-110`, `SISAP-VV-NEW-110`: build `2.15s`/`2.27s`, BD migrada `15` tablas OK). | Ejecutar prueba de usabilidad clínica/GUI observada en campo y prueba de humo sobre el `.exe` NSIS `v1.1.0`. |
+| **§5.8 Liberación del software** | **Parcial** | `SISAP-LC-011`, `SISAP-VV-RDY-110` (10/10 criterios técnicos evaluados), `CHANGELOG.md`, `RELEASE_NOTES_v1.1.0.md` en `release/1.1.0` con `v1.0.0` intacto. | Obtener aprobación formal, compilar `.exe` `v1.1.0`, crear tag y publicar borrador cuando se autorice. |
 | **§6 Mantenimiento** | **Implementado** | `SISAP-LC-012` con flujo de análisis de impacto, riesgo, regresión y SemVer. | Aplicar ante solicitudes posteriores a `v1.1.0`. |
 | **§8 Gestión de configuración y SOUP** | **Implementado** | `SISAP-LC-014` (commits, SHA-256 modelos, migraciones) y `SISAP-LC-016` (inventario SOUP `package-lock.json`). | Auditar periódicamente CVEs de dependencias npm y Node LTS. |
-| **§9 Resolución de problemas** | **Implementado** | `SISAP-LC-013` con bitácora cerrada/mitigada `PRB-001..006`. | Mantener registro vivo ante nuevas incidencias. |
+| **§9 Resolución de problemas** | **Implementado** | `SISAP-LC-013` y `SISAP-VV-ISS-110` con bitácora cerrada/mitigada `PRB-001..007` y limitaciones declaradas `OPEN-01..06`. | Mantener registro vivo ante nuevas incidencias. |
 | **Trazabilidad bidireccional** | **Implementado** | `SISAP-LC-015` enlazando `REQ ↔ Diseño ↔ Implementación ↔ Riesgo ↔ Control ↔ Prueba ↔ Release`. | N/A |
 | **Cláusulas exclusivas Clase C** | **No aplicable** *(Justificado)* | Uso previsto supervisado sin soporte vital ni actuación física directa (`SISAP-LC-001`, `SISAP-LC-004`). | Reabrir únicamente si un dictamen regulatorio clasificase algún módulo como Clase C. |
 
@@ -57,8 +57,9 @@
 - **Documentos heredados de fase conceptual / contextual (`docs/00_..18_`):**
   - `docs/00` a `docs/15`: borrador histórico Python/Dash (agosto 2026) alineado ahora mediante notas de control que remiten a `docs/lifecycle/` como SSOT vigente.
   - `docs/16` a `docs/20`: diseño escritorio, diseño UX/UI, regulación mexicana (`REG-001`, `REG-DOC-DCSA-DICO-001`), verificación Autoencoder (`A..F`) y Centro Psicométrico (`ARQUITECTURA_Y_MATERIALES_CENTRO_PSICOMETRICO.md`).
-- **Documentos nuevos creados en esta actividad (25 documentos controlados sin carpetas vacías):**
-  - 19 documentos bajo `docs/lifecycle/00` a `18` (`SISAP-LC-000` a `SISAP-LC-018`).
+- **Documentos nuevos creados en esta actividad (32 documentos controlados sin carpetas vacías):**
+  - 19 documentos maestros bajo `docs/lifecycle/00` a `18` (`SISAP-LC-000` a `SISAP-LC-018`).
+  - 7 informes de verificación e instalación comparativa `v1.0.0` vs `v1.1.0` bajo `docs/lifecycle/10_system_testing/version_comparison_v1.0.0_vs_v1.1.0/` (`SISAP-VV-*`).
   - 6 expedientes técnicos modulares bajo `docs/modules/*` (`SISAP-MOD-AE-001`, `PSYC-001`, `LONG-001`, `NARR-001`, `MM-001`, `DSS-001`).
 - **Documentos o evidencias externas pendientes:**
   - Actas de aprobación formal firmadas por responsables clínicos y de calidad (para promover documentos de `En revisión` a `Aprobado`).
