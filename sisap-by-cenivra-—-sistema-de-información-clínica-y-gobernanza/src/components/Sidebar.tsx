@@ -17,10 +17,14 @@ import {
   UserCheck,
   Database,
   Layers,
+  BrainCircuit,
+  ClipboardCheck,
 } from 'lucide-react';
 
 export type NavScreen =
   | 'inicio'
+  | 'centro_psicometrico'
+  | 'ecosistema'
   | 'pacientes'
   | 'entrevista'
   | 'eval_inicial'
@@ -80,6 +84,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate, rol
       title: 'CAPTURA CLÍNICA',
       items: [
         {
+          id: 'centro_psicometrico',
+          label: 'Centro Psicométrico',
+          icon: <ClipboardCheck className="w-4 h-4" />,
+          badge: 'Digital',
+          badgeColor: 'ok',
+        },
+        {
           id: 'entrevista',
           label: 'Entrevista exploratoria',
           icon: <FileSpreadsheet className="w-4 h-4" />,
@@ -87,9 +98,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate, rol
         },
         {
           id: 'eval_inicial',
-          label: 'Evaluación inicial',
+          label: 'Evaluación inicial (Resumen)',
           icon: <Activity className="w-4 h-4" />,
-          badge: '6 escalas',
+          badge: 'Compat.',
           badgeColor: 'ok',
         },
         {
@@ -118,6 +129,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate, rol
     {
       title: 'ANÁLISIS Y MODELOS',
       items: [
+        {
+          id: 'ecosistema',
+          label: 'Ecosistema de Inteligencia',
+          icon: <BrainCircuit className="w-4 h-4" />,
+          badge: '5 Motores',
+          badgeColor: 'ok',
+        },
         {
           id: 'simulador',
           label: 'Simulador Autoencoder',

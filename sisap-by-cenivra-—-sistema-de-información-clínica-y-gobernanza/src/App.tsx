@@ -20,11 +20,13 @@ import { PatientsView } from './components/views/PatientsView';
 import { ExploratoryInterviewView } from './components/views/ExploratoryInterviewView';
 import { InitialEvaluationView } from './components/views/InitialEvaluationView';
 import { FollowUpScalesView } from './components/views/FollowUpScalesView';
+import { PsychometricCenterView } from './components/views/PsychometricCenterView';
 import { PsychologicalEvolutionView } from './components/views/PsychologicalEvolutionView';
 import { FamilySessionView } from './components/views/FamilySessionView';
 import { WeeklyNarrativeView } from './components/views/WeeklyNarrativeView';
 import { AutoencoderSimulatorView } from './components/views/AutoencoderSimulatorView';
 import { AnalysisModelView } from './components/views/AnalysisModelView';
+import { IntelligenceEcosystemView } from './components/views/IntelligenceEcosystemView';
 import { TraceabilityView } from './components/views/TraceabilityView';
 import { BlindLayerView } from './components/views/BlindLayerView';
 import { UsersManagementView } from './components/views/UsersManagementView';
@@ -277,6 +279,20 @@ export default function App() {
             />
           )}
 
+          {currentScreen === 'centro_psicometrico' && (
+            <PsychometricCenterView
+              currentUser={currentUser}
+              roleConfig={roleConfig}
+              selectedPseudonym={selectedPseudonym}
+              onSelectPseudonym={setSelectedPseudonym}
+              isAnonymousMode={isAnonymousMode}
+              onNavigate={(screen, pat) => {
+                if (pat) setSelectedPseudonym(pat);
+                setCurrentScreen(screen);
+              }}
+            />
+          )}
+
           {currentScreen === 'eval_inicial' && (
             <InitialEvaluationView
               currentUser={currentUser}
@@ -284,6 +300,7 @@ export default function App() {
               selectedPseudonym={selectedPseudonym}
               initialData={activeDraftData}
               onDraftSaved={reloadDraftsCount}
+              onOpenPsychometricCenter={() => setCurrentScreen('centro_psicometrico')}
             />
           )}
 
@@ -294,6 +311,7 @@ export default function App() {
               selectedPseudonym={selectedPseudonym}
               initialData={activeDraftData}
               onDraftSaved={reloadDraftsCount}
+              onOpenPsychometricCenter={() => setCurrentScreen('centro_psicometrico')}
             />
           )}
 
@@ -324,6 +342,14 @@ export default function App() {
               selectedPseudonym={selectedPseudonym}
               initialData={activeDraftData}
               onDraftSaved={reloadDraftsCount}
+            />
+          )}
+
+          {currentScreen === 'ecosistema' && (
+            <IntelligenceEcosystemView
+              currentUser={currentUser}
+              roleConfig={roleConfig}
+              selectedPseudonym={selectedPseudonym}
             />
           )}
 

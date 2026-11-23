@@ -12,8 +12,20 @@ import {
   ConsentRecord,
   ArcoRequest,
   DeidentificationVaultToken,
+  FollowUpEvaluationRecord,
+  PsychometricEvaluationRecord,
+  PsychometricItemResponseRecord,
+  PsychometricResultRecord,
+  PsychometricEvaluationBundle,
+  LongitudinalInstrumentSummary,
 } from '../types/clinical';
 import { INITIAL_USERS } from '../constants/clinicalConstants';
+import {
+  DigitalItemResponseInput,
+  PsychometricOptionalComplements,
+  scorePsychometricEvaluation,
+} from '../psychometrics/scoringEngine';
+import { resolveInstrumentConfig } from '../psychometrics/instrumentCatalog';
 
 const STORAGE_KEYS = {
   PADRON: 'sisap_v1_padron',
@@ -23,6 +35,10 @@ const STORAGE_KEYS = {
   NOTAS_FAMILIARES: 'sisap_v1_notas_familiares',
   NARRACIONES: 'sisap_v1_narraciones',
   EVALUACIONES: 'sisap_v1_evaluaciones_iniciales',
+  SEGUIMIENTOS: 'sisap_v1_seguimientos_longitudinales',
+  PSYCH_EVALUATIONS: 'sisap_v1_psych_evaluations',
+  PSYCH_RESPONSES: 'sisap_v1_psych_responses',
+  PSYCH_RESULTS: 'sisap_v1_psych_results',
   ENTREVISTAS: 'sisap_v1_entrevistas',
   USUARIOS: 'sisap_v1_usuarios',
   TEMA: 'sisap_v1_tema',
@@ -1111,6 +1127,427 @@ export const StorageService = {
   },
 
   // 6. Matriz de Interoperabilidad HL7 FHIR (NOM-024)
+  getFollowUpEvaluations(patientId?: string): FollowUpEvaluationRecord[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.SEGUIMIENTOS);
+    let list: FollowUpEvaluationRecord[] = [];
+    if (raw) {
+      try {
+        list = JSON.parse(raw);
+      } catch {
+        list = [];
+      }
+    }
+    const filtered = patientId ? list.filter((item) => item.patient_id === patientId) : list;
+    return filtered.sort((a, b) => a.evaluation_date.localeCompare(b.evaluation_date));
+  },
+
+  saveFollowUpEvaluation(record: FollowUpEvaluationRecord) {
+    const list = this.getFollowUpEvaluations();
+    list.push(record);
+    localStorage.setItem(STORAGE_KEYS.SEGUIMIENTOS, JSON.stringify(list));
+  },
+
+  // 6B. Centro de Evaluación Psicométrica (Modelo 3 Niveles: Evaluación / Respuestas / Resultados)
+  getPsychometricEvaluations(pseudonym?: string): PsychometricEvaluationRecord[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.PSYCH_EVALUATIONS);
+    let list: PsychometricEvaluationRecord[] = [];
+    if (raw) {
+      try {
+        list = JSON.parse(raw);
+      } catch {
+        list = [];
+      }
+    }
+    const filtered = pseudonym ? list.filter((e) => e.patient_id === pseudonym) : list;
+    return filtered.sort((a, b) => b.started_at.localeCompare(a.started_at));
+  },
+
+  getPsychometricResponses(evaluationId?: string): PsychometricItemResponseRecord[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.PSYCH_RESPONSES);
+    let list: PsychometricItemResponseRecord[] = [];
+    if (raw) {
+      try {
+        list = JSON.parse(raw);
+      } catch {
+        list = [];
+      }
+    }
+    const filtered = evaluationId ? list.filter((r) => r.evaluation_id === evaluationId) : list;
+    return filtered.sort((a, b) => a.item_number - b.item_number);
+  },
+
+  getPsychometricResults(evaluationId?: string): PsychometricResultRecord[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.PSYCH_RESULTS);
+    let list: PsychometricResultRecord[] = [];
+    if (raw) {
+      try {
+        list = JSON.parse(raw);
+      } catch {
+        list = [];
+      }
+    }
+    const filtered = evaluationId ? list.filter((r) => r.evaluation_id === evaluationId) : list;
+    return filtered.sort((a, b) => b.calculated_at.localeCompare(a.calculated_at));
+  },
+
+  getPsychometricEvaluationById(evaluationId: string): PsychometricEvaluationBundle | null {
+    const evalRec = this.getPsychometricEvaluations().find((e) => e.evaluation_id === evaluationId);
+    if (!evalRec) return null;
+    const responses = this.getPsychometricResponses(evaluationId);
+    const resultsHistory = this.getPsychometricResults(evaluationId);
+    return {
+      evaluation: evalRec,
+      responses,
+      latestResult: resultsHistory[0] || null,
+      resultsHistory,
+    };
+  },
+
+  getPsychometricEvaluationBundles(pseudonym?: string): PsychometricEvaluationBundle[] {
+    const evals = this.getPsychometricEvaluations(pseudonym);
+    return evals.map((evalRec) => {
+      const responses = this.getPsychometricResponses(evalRec.evaluation_id);
+      const resultsHistory = this.getPsychometricResults(evalRec.evaluation_id);
+      return {
+        evaluation: evalRec,
+        responses,
+        latestResult: resultsHistory[0] || null,
+        resultsHistory,
+      };
+    });
+  },
+
+  savePsychometricEvaluationLocal(params: {
+    evaluationId?: string;
+    patientId: string;
+    instrumentId: string;
+    instrumentVersion?: string;
+    evaluator: string;
+    applicationStatus: 'draft' | 'completed';
+    captureMode?: 'digital_form' | 'numeric_sequence_legacy';
+    scoringMode?: 'manual_estandar' | 'excel_canonico';
+    sessionContext?: string;
+    sessionNumber?: number | null;
+    responses: DigitalItemResponseInput[];
+    optionalComplements?: PsychometricOptionalComplements;
+    notes?: string;
+  }): PsychometricEvaluationBundle {
+    const config = resolveInstrumentConfig(params.instrumentId, params.instrumentVersion);
+    const nowIso = new Date().toISOString();
+    const scoringMode = params.scoringMode || 'manual_estandar';
+    const captureMode = params.captureMode || 'digital_form';
+
+    const scored = scorePsychometricEvaluation({
+      instrumentId: config.id,
+      instrumentVersion: config.version,
+      responses: params.responses,
+      optionalComplements: params.optionalComplements,
+      scoringMode,
+      nowIso,
+    });
+
+    if (params.applicationStatus === 'completed' && !scored.derivedIndicators.completeness.isValidForScoring) {
+      throw new Error(
+        `No es posible finalizar la evaluación: ${scored.derivedIndicators.completeness.warnings.join(' ')}`
+      );
+    }
+
+    const allEvals = this.getPsychometricEvaluations();
+    const existingIdx = params.evaluationId
+      ? allEvals.findIndex((e) => e.evaluation_id === params.evaluationId)
+      : -1;
+
+    if (existingIdx >= 0 && allEvals[existingIdx].application_status === 'completed') {
+      throw new Error(
+        `La evaluación ${params.evaluationId} ya fue cerrada como completada y no puede sobrescribirse.`
+      );
+    }
+
+    const evalId =
+      existingIdx >= 0
+        ? allEvals[existingIdx].evaluation_id
+        : params.evaluationId || `psy-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+    const evalRecord: PsychometricEvaluationRecord = {
+      evaluation_id: evalId,
+      patient_id: params.patientId,
+      instrument_id: config.id,
+      instrument_version: config.version,
+      language: config.language,
+      started_at: existingIdx >= 0 ? allEvals[existingIdx].started_at : nowIso,
+      completed_at: params.applicationStatus === 'completed' ? nowIso : null,
+      evaluator: params.evaluator,
+      application_status: params.applicationStatus,
+      capture_mode: captureMode,
+      scoring_mode: scoringMode,
+      session_context: params.sessionContext || 'evaluacion_clinica',
+      complements: params.optionalComplements || null,
+      notes: params.notes || null,
+      creado_en: existingIdx >= 0 ? allEvals[existingIdx].creado_en : nowIso,
+      actualizado_en: nowIso,
+    };
+
+    if (existingIdx >= 0) {
+      allEvals[existingIdx] = evalRecord;
+    } else {
+      allEvals.unshift(evalRecord);
+    }
+    localStorage.setItem(STORAGE_KEYS.PSYCH_EVALUATIONS, JSON.stringify(allEvals));
+
+    // Nivel 2: respuestas individuales
+    const otherResponses = this.getPsychometricResponses().filter((r) => r.evaluation_id !== evalId);
+    const newResponses: PsychometricItemResponseRecord[] = scored.rawResponses.map((r) => ({
+      response_row_id: `resp-${evalId}-${r.displayNumber}`,
+      evaluation_id: evalId,
+      item_id: r.itemId,
+      item_number: r.displayNumber,
+      canonical_code: r.canonicalCode,
+      selected_label: r.selectedOptionLabel,
+      numeric_code: r.numericCode,
+      modified_at: r.modifiedAt || nowIso,
+    }));
+    localStorage.setItem(STORAGE_KEYS.PSYCH_RESPONSES, JSON.stringify([...otherResponses, ...newResponses]));
+
+    // Nivel 3: resultado versionado
+    const existingResultsForEval =
+      existingIdx >= 0 ? this.getPsychometricResults().filter((r) => r.evaluation_id !== evalId) : this.getPsychometricResults();
+    const resultRecord: PsychometricResultRecord = {
+      result_id: `res-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      evaluation_id: evalId,
+      total_score: scored.calculatedScores.totalScore,
+      technical_total_score: scored.calculatedScores.technicalReferenceTotal,
+      mean_score: scored.calculatedScores.meanScore,
+      subscales: {
+        subscales: scored.calculatedScores.subscales,
+        subscaleMap: scored.calculatedScores.subscaleMap,
+        alternateScoringModes: scored.calculatedScores.alternateScoringModes,
+      },
+      recoded_values: scored.recodedResponses,
+      missing_items: {
+        missingItems: scored.derivedIndicators.completeness.missingItems,
+        missingItemIds: scored.derivedIndicators.completeness.missingItemIds,
+        missingDisplayNumbers: scored.derivedIndicators.completeness.missingDisplayNumbers,
+        isValidForScoring: scored.derivedIndicators.completeness.isValidForScoring,
+        warnings: scored.derivedIndicators.completeness.warnings,
+      },
+      derived_indicators: scored.derivedIndicators,
+      interpretation: scored.interpretations,
+      numeric_sequence: scored.derivedIndicators.numericSequence,
+      algorithm_version: scored.algorithmVersion,
+      calculated_at: nowIso,
+    };
+    localStorage.setItem(STORAGE_KEYS.PSYCH_RESULTS, JSON.stringify([resultRecord, ...existingResultsForEval]));
+
+    // Puente automático hacia motores analíticos y expediente al completar
+    if (params.applicationStatus === 'completed') {
+      const mirrorTotal = scored.calculatedScores.totalScore ?? scored.calculatedScores.technicalReferenceTotal ?? 0;
+      const numericOnly = scored.derivedIndicators.numericArray.filter((v): v is number => v !== null && Number.isFinite(v));
+
+      this.saveFollowUpEvaluation({
+        follow_up_id: `fu-${evalId}`,
+        patient_id: params.patientId,
+        evaluation_date: nowIso.slice(0, 10),
+        session_number: params.sessionNumber ?? null,
+        instrument: config.id,
+        total_score: mirrorTotal,
+        subscales: Object.fromEntries(
+          Object.entries(scored.calculatedScores.subscaleMap).filter(([, v]) => typeof v === 'number')
+        ) as Record<string, number>,
+        items: numericOnly,
+        items_count: numericOnly.length,
+        clinical_severity: scored.interpretations.level,
+        clinician_id: params.evaluator,
+        notes: `[Centro Psicométrico ${config.version}] ${params.notes || ''}`.trim(),
+        creado_en: nowIso,
+      });
+
+      const pat = this.getPatient(params.patientId);
+      if (pat) {
+        const keyMap: Record<string, keyof PatientClinico['escalas']> = {
+          'BIS-11': 'BIS_11',
+          'BSL-23': 'BSL_23',
+          'GAD-7': 'GAD_7',
+          'STAXI-2': 'STAXI_2',
+          BADS: 'BADS',
+          EROS: 'EROS',
+        };
+        const sk = keyMap[config.id];
+        if (sk) pat.escalas[sk] = true;
+        pat.ultima_actualizacion = new Date().toLocaleString('es-MX');
+        this.savePatient(pat);
+      }
+
+      // Sincronizar enInitialEvaluationData cuando sea evaluación basal o compatible
+      const evalsIni = this.getEvaluations(params.patientId);
+      const latestIni: InitialEvaluationData = evalsIni[0] || {
+        id: `eval-${Date.now().toString(36)}`,
+        expediente: params.patientId,
+        fecha_eval: nowIso.slice(0, 10),
+        aplico: params.evaluator,
+        raw_bis_11: '',
+        raw_bsl_23: '',
+        raw_gad_7: '',
+        raw_staxi_2: '',
+        raw_bads: '',
+        raw_eros: '',
+        edad: this.getPatientPadron(params.patientId)?.edad || 34,
+        tiempo_consumo_anios: 5,
+        tratamientos_previos_cuenta: 1,
+        creado_en: nowIso,
+      };
+      const seqClean =
+        config.id === 'STAXI-2'
+          ? scored.derivedIndicators.numericArray.slice(0, 49).join(' ')
+          : scored.derivedIndicators.numericSequence;
+      if (config.id === 'BIS-11') latestIni.raw_bis_11 = seqClean;
+      if (config.id === 'BSL-23') {
+        latestIni.raw_bsl_23 = seqClean;
+        if (typeof params.optionalComplements?.bslGeneral01 === 'number') {
+          latestIni.bsl_general_0_1 = params.optionalComplements.bslGeneral01;
+        }
+        if (Array.isArray(params.optionalComplements?.bslBehavioral11)) {
+          latestIni.raw_bsl_23_conductual = params.optionalComplements.bslBehavioral11
+            .map((v) => (v === null ? '0' : String(v)))
+            .join(' ');
+        }
+      }
+      if (config.id === 'GAD-7') latestIni.raw_gad_7 = seqClean;
+      if (config.id === 'STAXI-2') latestIni.raw_staxi_2 = seqClean;
+      if (config.id === 'BADS') latestIni.raw_bads = seqClean;
+      if (config.id === 'EROS') latestIni.raw_eros = seqClean;
+      this.saveEvaluation(latestIni);
+
+      this.logAction({
+        usuario: params.evaluator,
+        rol: 'psicologo',
+        accion: `Aplicación digital completada: ${config.id} (${config.version})`,
+        exp: params.patientId,
+        detalles: `Evaluación ${evalId} cerrada en 3 niveles; total=${scored.calculatedScores.totalScore ?? 'perfil'}.`,
+      });
+    }
+
+    return {
+      evaluation: evalRecord,
+      responses: newResponses,
+      latestResult: resultRecord,
+      resultsHistory: [resultRecord, ...existingResultsForEval.filter((r) => r.evaluation_id === evalId)],
+    };
+  },
+
+  recalculatePsychometricEvaluationLocal(
+    evaluationId: string,
+    scoringMode?: 'manual_estandar' | 'excel_canonico'
+  ): PsychometricEvaluationBundle | null {
+    const bundle = this.getPsychometricEvaluationById(evaluationId);
+    if (!bundle) return null;
+    const nowIso = new Date().toISOString();
+    const scored = scorePsychometricEvaluation({
+      instrumentId: bundle.evaluation.instrument_id,
+      instrumentVersion: bundle.evaluation.instrument_version,
+      responses: bundle.responses.map((r) => ({
+        itemId: r.item_id,
+        numericCode: r.numeric_code,
+        selectedOptionLabel: r.selected_label,
+        modifiedAt: r.modified_at,
+      })),
+      optionalComplements: bundle.evaluation.complements || {},
+      scoringMode: scoringMode || bundle.evaluation.scoring_mode,
+      nowIso,
+    });
+    const newRes: PsychometricResultRecord = {
+      result_id: `res-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      evaluation_id: evaluationId,
+      total_score: scored.calculatedScores.totalScore,
+      technical_total_score: scored.calculatedScores.technicalReferenceTotal,
+      mean_score: scored.calculatedScores.meanScore,
+      subscales: {
+        subscales: scored.calculatedScores.subscales,
+        subscaleMap: scored.calculatedScores.subscaleMap,
+        alternateScoringModes: scored.calculatedScores.alternateScoringModes,
+      },
+      recoded_values: scored.recodedResponses,
+      missing_items: {
+        missingItems: scored.derivedIndicators.completeness.missingItems,
+        missingItemIds: scored.derivedIndicators.completeness.missingItemIds,
+        missingDisplayNumbers: scored.derivedIndicators.completeness.missingDisplayNumbers,
+        isValidForScoring: scored.derivedIndicators.completeness.isValidForScoring,
+        warnings: scored.derivedIndicators.completeness.warnings,
+      },
+      derived_indicators: scored.derivedIndicators,
+      interpretation: scored.interpretations,
+      numeric_sequence: scored.derivedIndicators.numericSequence,
+      algorithm_version: scored.algorithmVersion,
+      calculated_at: nowIso,
+    };
+    const allRes = this.getPsychometricResults();
+    localStorage.setItem(STORAGE_KEYS.PSYCH_RESULTS, JSON.stringify([newRes, ...allRes]));
+    return this.getPsychometricEvaluationById(evaluationId);
+  },
+
+  getLongitudinalPsychometricSummary(pseudonym: string): Record<string, LongitudinalInstrumentSummary> {
+    const bundles = this.getPsychometricEvaluationBundles(pseudonym);
+    const byInst: Record<string, PsychometricEvaluationBundle[]> = {};
+    for (const b of bundles) {
+      if (!byInst[b.evaluation.instrument_id]) byInst[b.evaluation.instrument_id] = [];
+      byInst[b.evaluation.instrument_id].push(b);
+    }
+
+    const out: Record<string, LongitudinalInstrumentSummary> = {};
+    for (const [instId, list] of Object.entries(byInst)) {
+      const completed = list
+        .filter((x) => x.evaluation.application_status === 'completed')
+        .sort((a, b) =>
+          (a.evaluation.completed_at || a.evaluation.started_at).localeCompare(
+            b.evaluation.completed_at || b.evaluation.started_at
+          )
+        );
+      const versionsObserved = [...new Set(completed.map((c) => c.evaluation.instrument_version))];
+      const versionMismatchWarning = versionsObserved.length > 1;
+      let versionWarningMessage: string | null = null;
+      if (versionMismatchWarning) {
+        if (instId === 'BADS') {
+          versionWarningMessage = `Se comparan versiones distintas de BADS (${versionsObserved.join(' vs. ')}). La versión v22 excluye P4, P10 y P16; use medias por reactivo o subconjunto común.`;
+        } else if (instId === 'STAXI-2') {
+          versionWarningMessage = `Se comparan versiones distintas de STAXI-2 (${versionsObserved.join(' vs. ')}). Coteje las escalas de 49 ítems TEA como marco común.`;
+        } else {
+          versionWarningMessage = `Existen múltiples versiones de ${instId} (${versionsObserved.join(', ')}) en el historial.`;
+        }
+      }
+
+      const timeline = completed.map((c, idx) => {
+        const res = c.latestResult;
+        const prev = idx > 0 ? completed[idx - 1].latestResult : null;
+        const metricNow = res?.total_score ?? res?.technical_total_score ?? null;
+        const metricPrev = prev?.total_score ?? prev?.technical_total_score ?? null;
+        return {
+          evaluation_id: c.evaluation.evaluation_id,
+          date: (c.evaluation.completed_at || c.evaluation.started_at).slice(0, 10),
+          timestamp: c.evaluation.completed_at || c.evaluation.started_at,
+          version: c.evaluation.instrument_version,
+          evaluator: c.evaluation.evaluator,
+          total_score: res?.total_score ?? null,
+          technical_total_score: res?.technical_total_score ?? null,
+          mean_score: res?.mean_score ?? null,
+          subscaleMap: res?.subscales?.subscaleMap || {},
+          delta_from_previous:
+            metricNow !== null && metricPrev !== null ? Number((metricNow - metricPrev).toFixed(4)) : null,
+        };
+      });
+
+      out[instId] = {
+        instrument_id: instId,
+        total_applications: list.length,
+        completed_count: completed.length,
+        draft_count: list.filter((x) => x.evaluation.application_status === 'draft').length,
+        versionsObserved,
+        versionMismatchWarning,
+        versionWarningMessage,
+        timeline,
+      };
+    }
+    return out;
+  },
+
   generateFhirPatientBundle(pseudonym: string): Record<string, any> {
     const patient = this.getPatients().find((p) => p.seudonimo === pseudonym);
     const padron = this.getPadron().find((p) => p.seudonimo === pseudonym);
