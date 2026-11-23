@@ -23,5 +23,15 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-desktop",
+    "coverage",
+    "playwright-report",
+    "test-results",
+    "e2e",
+    "playwright.config.ts"
+  ]
 }
