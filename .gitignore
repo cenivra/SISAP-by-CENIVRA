@@ -96,7 +96,8 @@ coverage/
 coverage.xml
 playwright-report/
 test-results/
-e2e/results.json
+**/e2e/results.json
+**/e2e/playwright-results.json
 *.cover
 *.py.cover
 .tox/
