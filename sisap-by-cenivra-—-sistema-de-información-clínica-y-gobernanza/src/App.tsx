@@ -12,7 +12,7 @@ import { Footer } from './components/Footer';
 import { LoginModal } from './components/LoginModal';
 import { GoogleDriveModal } from './components/GoogleDriveModal';
 import { TelemetryModal, TelemetryOptInBanner } from './components/TelemetryModal';
-import { TelemetryService } from './services/telemetryService';
+import { TelemetryService, installGlobalErrorMonitoring } from './services/telemetryService';
 
 // Views
 import { WorkDashboardView } from './components/views/WorkDashboardView';
@@ -70,6 +70,8 @@ export default function App() {
       }
     } catch {}
 
+    const uninstallMonitoring = installGlobalErrorMonitoring();
+
     // Google Auth listener
     const unsubscribe = initAuth(
       (user) => {
@@ -81,6 +83,7 @@ export default function App() {
     );
 
     return () => {
+      uninstallMonitoring();
       if (unsubscribe) unsubscribe();
     };
   }, []);

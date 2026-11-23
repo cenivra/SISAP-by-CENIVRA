@@ -38,6 +38,10 @@ import {
   recalculateEvaluationResults,
   savePsychometricEvaluation,
 } from '../services/psychometricService.js';
+import {
+  getSystemMonitoringMetrics,
+  recordSanitizedClientError,
+} from '../services/monitoringService.js';
 
 /**
  * Define las rutas. Devuelve { matched, status, body } o null si no coincide.
@@ -253,6 +257,15 @@ export async function route(ctx) {
     const evalId = decodeURIComponent(m[1]);
     const bundle = recalculateEvaluationResults(evalId, { scoringMode: body?.scoring_mode });
     return { status: 200, body: bundle };
+  }
+
+  // ---- Monitorización soberana (sin PHI) ----------------------------------
+  if (method === 'GET' && pathname === '/api/monitoring/metrics') {
+    return { status: 200, body: getSystemMonitoringMetrics() };
+  }
+
+  if (method === 'POST' && pathname === '/api/monitoring/client-error') {
+    return { status: 202, body: recordSanitizedClientError(body) };
   }
 
   // ---- Auditoría ----------------------------------------------------------
