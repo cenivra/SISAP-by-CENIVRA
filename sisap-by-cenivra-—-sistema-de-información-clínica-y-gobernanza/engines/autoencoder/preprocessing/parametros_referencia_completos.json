@@ -1,0 +1,491 @@
+{
+  "bis_nonplanning_inversion": {
+    "metodo_script_original": "max_autocontrol - Autocontrol",
+    "max_autocontrol_cohorte_166": 21.0,
+    "evidencia": "Autoencoder TUS estratificacion.R líneas 552-553"
+  },
+  "bis_total_calculado_z_params": {
+    "formula": "Z(Atencion) + Z(Motor) + Z(bis_nonplanning_inv)",
+    "evidencia": "Autoencoder TUS estratificacion.R líneas 575-576",
+    "parametros_cohorte_166": {
+      "Atencion": {
+        "mean": 8.69277108433735,
+        "sd": 3.705304408466495
+      },
+      "Motor": {
+        "mean": 12.24698795180723,
+        "sd": 5.275945122268359
+      },
+      "bis_nonplanning": {
+        "mean": 10.578313253012048,
+        "sd": 4.595440380328813
+      }
+    }
+  },
+  "gad7_zscore_excel_params": {
+    "formula": "(GAD_Total - celda_X1) / celda_Y1",
+    "celda_X1_formula": "=AVERAGE($K$2:$K$11)",
+    "celda_Y1_formula": "=_xlfn.STDEV.S($K$2:$K$11)",
+    "mean_X1_ref": 7.4,
+    "sd_Y1_ref": 5.853773711604051,
+    "evidencia": "Hoja 'GAD 7' de Escalas fase transversal TUS.xlsx (columnas M, X, Y) y línea 650 del script R"
+  },
+  "compuestos_nivel_2B_z_params": {
+    "formula": "rowMeans(scale(vars_bloque)) antes de winsorización",
+    "evidencia": "Autoencoder TUS estratificacion.R líneas 2438-2445",
+    "compuesto_bis": {
+      "BIS.11_bis_motor": {
+        "mean": 12.24698795180723,
+        "sd": 5.275945122268359
+      },
+      "BIS.11_bis_nonplanning": {
+        "mean": 10.578313253012048,
+        "sd": 4.595440380328813
+      },
+      "BIS.11_bis_cognitive_instability": {
+        "mean": 6.114457831325301,
+        "sd": 2.699972279548854
+      },
+      "BIS.11_bis_perseverance": {
+        "mean": 7.716867469879518,
+        "sd": 2.9394833302803374
+      },
+      "BIS.11_bis_motor_impulsivity": {
+        "mean": 16.85542168674699,
+        "sd": 7.102082545829023
+      },
+      "BIS.11_bis_total_calculado": {
+        "mean": -6.634585785711779e-16,
+        "sd": 1.3558520250207051
+      },
+      "sustancia_sustanciaCannabis": {
+        "mean": 0.07228915662650602,
+        "sd": 0.2597496477727589
+      }
+    },
+    "compuesto_staxi": {
+      "STAXI.2_staxi_state": {
+        "mean": 20.457831325301203,
+        "sd": 8.815690151321318
+      },
+      "STAXI.2_staxi_trait": {
+        "mean": 17.53012048192771,
+        "sd": 7.371258433570691
+      },
+      "STAXI.2_staxi_temperamento": {
+        "mean": 8.126506024096386,
+        "sd": 3.6083601358041384
+      }
+    },
+    "compuesto_bsl": {
+      "BSL.23_bsl_general": {
+        "mean": 0.6533132530120482,
+        "sd": 0.22395450986742788
+      },
+      "BSL.23_bsl_total_integrado": {
+        "mean": 25.102409638554217,
+        "sd": 24.56472699502826
+      }
+    },
+    "compuesto_eros_excluido": {
+      "EROS_tiempo_consumo_eros": {
+        "mean": 11.374193548387098,
+        "sd": 8.639345504233324
+      },
+      "EROS_trat_previos_eros": {
+        "mean": 2.2774193548387096,
+        "sd": 3.321585218229486
+      },
+      "EROS_eros_total": {
+        "mean": 27.46385542168675,
+        "sd": 5.901865720687911
+      }
+    }
+  },
+  "normalizacion_final_24": {
+    "BIS_11BIS_motor": {
+      "orden_24": 1,
+      "orden_22": 1,
+      "variable_encoder": "BIS_11BIS_motor",
+      "variable_mcdl": "BIS.11_bis_motor",
+      "variable_preproc_rds": "BIS_11BIS_motor",
+      "instrumento": "BIS-11",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 12.0,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 23.69999999999999,
+      "media_post_winsor_ref": 12.2253012048193,
+      "sd_post_winsor_ref": 5.2242753506136,
+      "descripcion": "Subescala de primer orden Motor (P2,P3,P4,P17,P19,P22,P25)"
+    },
+    "BIS_11BIS_nonplanning": {
+      "orden_24": 2,
+      "orden_22": 2,
+      "variable_encoder": "BIS_11BIS_nonplanning",
+      "variable_mcdl": "BIS.11_bis_nonplanning",
+      "variable_preproc_rds": "BIS_11BIS_nonplanning",
+      "instrumento": "BIS-11",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 11.0,
+      "winsorize_q01_ref": 0.6500000000000001,
+      "winsorize_q99_ref": 21.0,
+      "media_post_winsor_ref": 10.5861445783133,
+      "sd_post_winsor_ref": 4.57782079459815,
+      "descripcion": "Autocontrol invertido por máximo observado: 21 - Autocontrol (P1,P7,P8,P12,P13,P14)"
+    },
+    "BIS_11BIS_cognitive_instability": {
+      "orden_24": 3,
+      "orden_22": 3,
+      "variable_encoder": "BIS_11BIS_cognitive_instability",
+      "variable_mcdl": "BIS.11_bis_cognitive_instability",
+      "variable_preproc_rds": "BIS_11BIS_cognitive_instability",
+      "instrumento": "BIS-11",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 6.0,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 12.0,
+      "media_post_winsor_ref": 6.1144578313253,
+      "sd_post_winsor_ref": 2.69997227954885,
+      "descripcion": "Subescala de primer orden Inestabilidad Cognitiva (P6,P24,P26)"
+    },
+    "BIS_11BIS_perseverance": {
+      "orden_24": 4,
+      "orden_22": 4,
+      "variable_encoder": "BIS_11BIS_perseverance",
+      "variable_mcdl": "BIS.11_bis_perseverance",
+      "variable_preproc_rds": "BIS_11BIS_perseverance",
+      "instrumento": "BIS-11",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 8.0,
+      "winsorize_q01_ref": 1.6500000000000001,
+      "winsorize_q99_ref": 15.0,
+      "media_post_winsor_ref": 7.73072289156627,
+      "sd_post_winsor_ref": 2.90726187253106,
+      "descripcion": "Subescala de primer orden Perseverancia (P16,P21,P23,P30)"
+    },
+    "BIS_11BIS_motor_impulsivity": {
+      "orden_24": 5,
+      "orden_22": 5,
+      "variable_encoder": "BIS_11BIS_motor_impulsivity",
+      "variable_mcdl": "BIS.11_bis_motor_impulsivity",
+      "variable_preproc_rds": "BIS_11BIS_motor_impulsivity",
+      "instrumento": "BIS-11",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 16.0,
+      "winsorize_q01_ref": 3.6500000000000004,
+      "winsorize_q99_ref": 33.0,
+      "media_post_winsor_ref": 16.8692771084337,
+      "sd_post_winsor_ref": 7.01798914187482,
+      "descripcion": "Subescala de segundo orden Impulsividad Motora (P2,P6,P9,P12,P15,P18,P21,P23,P26,P29)"
+    },
+    "BIS_11BIS_total_calculado": {
+      "orden_24": 6,
+      "orden_22": 6,
+      "variable_encoder": "BIS_11BIS_total_calculado",
+      "variable_mcdl": "BIS.11_bis_total_calculado",
+      "variable_preproc_rds": "BIS_11BIS_total_calculado",
+      "instrumento": "BIS-11 (derivada)",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": -0.0024347672558100997,
+      "winsorize_q01_ref": -2.7097004371548823,
+      "winsorize_q99_ref": 3.593229862331654,
+      "media_post_winsor_ref": 0.0052553767931523,
+      "sd_post_winsor_ref": 1.3430697881244,
+      "descripcion": "Suma de Z-scores de 3 subescalas: Z(Atencion) + Z(Motor) + Z(Autocontrol_inv)"
+    },
+    "compuesto_bis": {
+      "orden_24": 7,
+      "orden_22": 7,
+      "variable_encoder": "compuesto_bis",
+      "variable_mcdl": "compuesto_bis",
+      "variable_preproc_rds": "compuesto_bis",
+      "instrumento": "Compuesto Nivel 2B",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": -0.0206898529609399,
+      "winsorize_q01_ref": -1.145515848422707,
+      "winsorize_q99_ref": 1.1847201565408785,
+      "media_post_winsor_ref": -0.00335717401741,
+      "sd_post_winsor_ref": 0.51011711980467,
+      "descripcion": "Media de Z-scores de 7 variables del bloque BIS (incluye dummy sustanciaCannabis)"
+    },
+    "STAXI_2STAXI_state": {
+      "orden_24": 8,
+      "orden_22": 8,
+      "variable_encoder": "STAXI_2STAXI_state",
+      "variable_mcdl": "STAXI.2_staxi_state",
+      "variable_preproc_rds": "STAXI_2STAXI_state",
+      "instrumento": "STAXI-2",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 16.5,
+      "winsorize_q01_ref": 15.0,
+      "winsorize_q99_ref": 56.099999999999966,
+      "media_post_winsor_ref": 20.3927710843373,
+      "sd_post_winsor_ref": 8.52440749751228,
+      "descripcion": "Puntuación TOTAL_ESTADO (suma de P1..P15)"
+    },
+    "STAXI_2STAXI_trait": {
+      "orden_24": 9,
+      "orden_22": 9,
+      "variable_encoder": "STAXI_2STAXI_trait",
+      "variable_mcdl": "STAXI.2_staxi_trait",
+      "variable_preproc_rds": "STAXI_2STAXI_trait",
+      "instrumento": "STAXI-2",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 16.0,
+      "winsorize_q01_ref": 10.0,
+      "winsorize_q99_ref": 39.349999999999994,
+      "media_post_winsor_ref": 17.5222891566265,
+      "sd_post_winsor_ref": 7.34754650046448,
+      "descripcion": "Puntuación TOTAL_RASGO (suma de P16..P25)"
+    },
+    "STAXI_2STAXI_temperamento": {
+      "orden_24": 10,
+      "orden_22": null,
+      "variable_encoder": "STAXI_2STAXI_temperamento",
+      "variable_mcdl": "STAXI.2_staxi_temperamento",
+      "variable_preproc_rds": "STAXI_2STAXI_temperamento",
+      "instrumento": "STAXI-2",
+      "entra_encoder_24": true,
+      "entra_encoder_22": false,
+      "mediana_imputacion_ref": 7.0,
+      "winsorize_q01_ref": 5.0,
+      "winsorize_q99_ref": 20.0,
+      "media_post_winsor_ref": 8.1144578313253,
+      "sd_post_winsor_ref": 3.56483269292039,
+      "descripcion": "Subescala Temperamento TEMP. (suma de P16,P17,P18,P20,P23); excluida en modelo de 22 vars"
+    },
+    "compuesto_staxi": {
+      "orden_24": 11,
+      "orden_22": null,
+      "variable_encoder": "compuesto_staxi",
+      "variable_mcdl": "compuesto_staxi",
+      "variable_preproc_rds": "compuesto_staxi",
+      "instrumento": "Compuesto Nivel 2B",
+      "entra_encoder_24": true,
+      "entra_encoder_22": false,
+      "mediana_imputacion_ref": -0.315499259306241,
+      "winsorize_q01_ref": -0.835705852139897,
+      "winsorize_q99_ref": 2.8286132483979496,
+      "media_post_winsor_ref": -0.0084518967324193,
+      "sd_post_winsor_ref": 0.891944113338523,
+      "descripcion": "Media de Z-scores de 3 variables STAXI (state, trait, temperamento); excluida en modelo de 22 vars"
+    },
+    "BSL_23BSL_general": {
+      "orden_24": 12,
+      "orden_22": 10,
+      "variable_encoder": "BSL_23BSL_general",
+      "variable_mcdl": "BSL.23_bsl_general",
+      "variable_preproc_rds": "BSL_23BSL_general",
+      "instrumento": "BSL-23",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 0.55,
+      "winsorize_q01_ref": 0.06500000000000002,
+      "winsorize_q99_ref": 1.0,
+      "media_post_winsor_ref": 0.654096385542169,
+      "sd_post_winsor_ref": 0.22175832405997,
+      "descripcion": "Columna estática GENERAL del Excel (escala de estado global 0.0-1.0, NO es Media BSL 23)"
+    },
+    "BSL_23BSL_total_integrado": {
+      "orden_24": 13,
+      "orden_22": 11,
+      "variable_encoder": "BSL_23BSL_total_integrado",
+      "variable_mcdl": "BSL.23_bsl_total_integrado",
+      "variable_preproc_rds": "BSL_23BSL_total_integrado",
+      "instrumento": "BSL-23",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 16.5,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 100.9499999999999,
+      "media_post_winsor_ref": 24.9512048192771,
+      "sd_post_winsor_ref": 24.0497476530623,
+      "descripcion": "Total Integrado = BSL_23_Total (P1..P23) + BSL_23_Conductual (P1-2..P11-2)"
+    },
+    "compuesto_bsl": {
+      "orden_24": 14,
+      "orden_22": 12,
+      "variable_encoder": "compuesto_bsl",
+      "variable_mcdl": "compuesto_bsl",
+      "variable_preproc_rds": "compuesto_bsl",
+      "instrumento": "Compuesto Nivel 2B",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": -0.0206168104292652,
+      "winsorize_q01_ref": -1.23804823155721,
+      "winsorize_q99_ref": 1.5184026175789895,
+      "media_post_winsor_ref": -0.0053640257743554,
+      "sd_post_winsor_ref": 0.580549381452819,
+      "descripcion": "Media de Z-scores de BSL_general y BSL_total_integrado"
+    },
+    "GAD_7GAD_zscore": {
+      "orden_24": 15,
+      "orden_22": 13,
+      "variable_encoder": "GAD_7GAD_zscore",
+      "variable_mcdl": "GAD.7_gad_zscore",
+      "variable_preproc_rds": "GAD_7GAD_zscore",
+      "instrumento": "GAD-7",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": -0.0683319888514092,
+      "winsorize_q01_ref": -1.26414179375107,
+      "winsorize_q99_ref": 2.32328762094791,
+      "media_post_winsor_ref": 0.116905330324097,
+      "sd_post_winsor_ref": 1.00835028643853,
+      "descripcion": "Z Score importado del Excel: (GAD_Total - 7.4) / 5.853773711604051"
+    },
+    "BADS_bads_activation": {
+      "orden_24": 16,
+      "orden_22": 14,
+      "variable_encoder": "BADS_bads_activation",
+      "variable_mcdl": "BADS_bads_activation",
+      "variable_preproc_rds": "BADS_bads_activation",
+      "instrumento": "BADS",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 26.5,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 42.0,
+      "media_post_winsor_ref": 26.7228915662651,
+      "sd_post_winsor_ref": 10.2517560985093,
+      "descripcion": "Subescala Activacion (suma de P3,P4,P5,P7,P11,P12,P23)"
+    },
+    "BADS_bads_avoidance": {
+      "orden_24": 17,
+      "orden_22": 15,
+      "variable_encoder": "BADS_bads_avoidance",
+      "variable_mcdl": "BADS_bads_avoidance",
+      "variable_preproc_rds": "BADS_bads_avoidance",
+      "instrumento": "BADS",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 21.0,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 48.0,
+      "media_post_winsor_ref": 22.8855421686747,
+      "sd_post_winsor_ref": 13.7243038795051,
+      "descripcion": "Subescala Evitacion/Rumia (suma de P8,P9,P10,P13,P14,P15,P24,P25)"
+    },
+    "BADS_bads_work": {
+      "orden_24": 18,
+      "orden_22": 16,
+      "variable_encoder": "BADS_bads_work",
+      "variable_mcdl": "BADS_bads_work",
+      "variable_preproc_rds": "BADS_bads_work",
+      "instrumento": "BADS",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 20.5,
+      "winsorize_q01_ref": 3.0,
+      "winsorize_q99_ref": 30.0,
+      "media_post_winsor_ref": 19.644578313253,
+      "sd_post_winsor_ref": 8.12628735553567,
+      "descripcion": "Subescala Afectacion del trabajo (suma de P1,P2,P6,P21,P22)"
+    },
+    "BADS_bads_social": {
+      "orden_24": 19,
+      "orden_22": 17,
+      "variable_encoder": "BADS_bads_social",
+      "variable_mcdl": "BADS_bads_social",
+      "variable_preproc_rds": "BADS_bads_social",
+      "instrumento": "BADS",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 17.0,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 30.0,
+      "media_post_winsor_ref": 15.3072289156626,
+      "sd_post_winsor_ref": 8.68133885963247,
+      "descripcion": "Subescala Afectacion de la vida social (suma de P16..P20)"
+    },
+    "edad": {
+      "orden_24": 20,
+      "orden_22": 18,
+      "variable_encoder": "edad",
+      "variable_mcdl": "edad",
+      "variable_preproc_rds": "edad",
+      "instrumento": "Clínica / Sociodemográfica",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 31.0,
+      "winsorize_q01_ref": 18.0,
+      "winsorize_q99_ref": 57.349999999999994,
+      "media_post_winsor_ref": 33.3777108433735,
+      "sd_post_winsor_ref": 11.1126906787664,
+      "descripcion": "Edad en años cumplidos (hoja BADS con respaldo EROS)"
+    },
+    "tiempo_consumo": {
+      "orden_24": 21,
+      "orden_22": 19,
+      "variable_encoder": "tiempo_consumo",
+      "variable_mcdl": "tiempo_consumo",
+      "variable_preproc_rds": "tiempo_consumo",
+      "instrumento": "Clínica / Temporal",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 10.0,
+      "winsorize_q01_ref": 1.6500000000000001,
+      "winsorize_q99_ref": 32.099999999999966,
+      "media_post_winsor_ref": 11.25,
+      "sd_post_winsor_ref": 8.10943707645418,
+      "descripcion": "Tiempo de consumo en años registrado en hoja BADS"
+    },
+    "trat_previos": {
+      "orden_24": 22,
+      "orden_22": 20,
+      "variable_encoder": "trat_previos",
+      "variable_mcdl": "trat_previos",
+      "variable_preproc_rds": "trat_previos",
+      "instrumento": "Clínica / Historial",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 2.0,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 8.349999999999994,
+      "media_post_winsor_ref": 2.11265060240964,
+      "sd_post_winsor_ref": 2.25702732054052,
+      "descripcion": "Número de tratamientos previos registrado en hoja BADS"
+    },
+    "tiempo_consumoEROS": {
+      "orden_24": 23,
+      "orden_22": 21,
+      "variable_encoder": "tiempo_consumoEROS",
+      "variable_mcdl": "EROS_tiempo_consumo_eros",
+      "variable_preproc_rds": "tiempo_consumo_EROS",
+      "instrumento": "EROS (colisión de nombres)",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 10.0,
+      "winsorize_q01_ref": 1.6500000000000001,
+      "winsorize_q99_ref": 32.099999999999966,
+      "media_post_winsor_ref": 11.2198795180723,
+      "sd_post_winsor_ref": 8.13456500768074,
+      "descripcion": "Tiempo de consumo registrado en hoja EROS (NO es interacción con puntuación EROS)"
+    },
+    "trat_previosEROS": {
+      "orden_24": 24,
+      "orden_22": 22,
+      "variable_encoder": "trat_previosEROS",
+      "variable_mcdl": "EROS_trat_previos_eros",
+      "variable_preproc_rds": "trat_previos_EROS",
+      "instrumento": "EROS (colisión de nombres)",
+      "entra_encoder_24": true,
+      "entra_encoder_22": true,
+      "mediana_imputacion_ref": 2.0,
+      "winsorize_q01_ref": 0.0,
+      "winsorize_q99_ref": 8.349999999999994,
+      "media_post_winsor_ref": 2.11265060240964,
+      "sd_post_winsor_ref": 2.25702732054052,
+      "descripcion": "Tratamientos previos registrado en hoja EROS (NO es interacción con puntuación EROS)"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "fecha_ejecucion": "2026-10-24T21:49:00-06:00",
+  "n_observaciones_canonicas": 166,
+  "n_observaciones_completas_en_tiempo_consumo_y_trat_previos": 155,
+  "n_observaciones_con_na_historico_filas_156_166": 11,
+  "max_abs_diff_preprocesamiento_166x24_desde_items_crudos": 1.554312234475219e-14,
+  "max_abs_diff_latentes_166x12_encoder_22_vs_representaciones_completas_csv": 1.7881393432617188e-07,
+  "encoder_24_finito_166x12": true,
+  "rango_latentes_encoder_22": [
+    -0.6799982786178589,
+    0.5407442450523376
+  ],
+  "rango_latentes_encoder_24": [
+    -0.6104184985160828,
+    0.7106047868728638
+  ]
+}

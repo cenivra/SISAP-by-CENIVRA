@@ -623,34 +623,36 @@ class CENIVRATransversalAutoencoder(nn.Module):
             </div>
 
             <div className="lg:col-span-7 space-y-4">
-              {/* Classification banner */}
-              <div className="p-3.5 rounded bg-[var(--campo)] border border-[var(--borde)]/40 space-y-2 text-xs">
+              {/* Verified Geometry Summary */}
+              <div className="p-3.5 rounded bg-[var(--campo)] border border-[var(--borde)]/40 space-y-2 text-xs tabular-nums">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-[var(--texto)]">Clúster Latente Asignado:</span>
-                  <span className="est-warn font-mono font-bold">
-                    P = {(sandboxInference.summaryIndices.probabilidad_clase_3b * 100).toFixed(0)}%
+                  <span className="font-bold text-[var(--texto)]">
+                    Representación Latente ({sandboxInference.modelId}):
+                  </span>
+                  <span className="est-ok font-mono font-bold">
+                    {sandboxInference.verifiedMetrics.architecture_str}
                   </span>
                 </div>
-                <div className="text-sm font-bold text-[var(--accion)]">
-                  {sandboxInference.summaryIndices.clase_latente_3b}
+                <div className="text-xs font-mono text-[var(--accion)]">
+                  {sandboxInference.summaryIndices.clase_latente_3b} · SHA {sandboxInference.verifiedMetrics.model_sha256_prefix}
                 </div>
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--sep)] text-[11px]">
                   <div>
-                    <span className="text-[var(--texto-tenue)] block">Severidad Multidominio:</span>
+                    <span className="text-[var(--texto-tenue)] block">MSE Reconstrucción (Z):</span>
                     <span className="font-mono font-bold text-sm text-[var(--texto)]">
-                      {sandboxInference.summaryIndices.severidad_multidominio}
+                      {sandboxInference.verifiedMetrics.mse_z.toFixed(4)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[var(--texto-tenue)] block">Desregulación Emocional:</span>
+                    <span className="text-[var(--texto-tenue)] block">Dist. mediana p50:</span>
                     <span className="font-mono font-bold text-sm text-[var(--texto)]">
-                      {sandboxInference.summaryIndices.desregulacion_emocional_impulsiva}
+                      {sandboxInference.verifiedMetrics.distance_to_cohort_median_p50.toFixed(4)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[var(--texto-tenue)] block">Incertidumbre:</span>
+                    <span className="text-[var(--texto-tenue)] block">Fuera de p05–p95:</span>
                     <span className="font-mono font-bold text-sm text-[var(--texto)]">
-                      {(sandboxInference.summaryIndices.incertidumbre_clase_3b * 100).toFixed(0)}%
+                      {sandboxInference.verifiedMetrics.n_outside_p05_p95} / 12
                     </span>
                   </div>
                 </div>

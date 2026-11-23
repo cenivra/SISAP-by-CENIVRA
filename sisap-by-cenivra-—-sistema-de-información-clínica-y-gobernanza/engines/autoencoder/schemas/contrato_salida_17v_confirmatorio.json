@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "model_id": "ae_tus_17to12",
+  "model_version": "0.1.0-2026-11-15",
+  "pipeline_version": "preproc_v1_2026-11-14",
+  "output": {
+    "latent_representation": {
+      "dimensions": 12,
+      "names": ["Z01", "Z02", "Z03", "Z04", "Z05", "Z06", "Z07", "Z08", "Z09", "Z10", "Z11", "Z12"],
+      "dtype": "numeric",
+      "semantics": "opaque",
+      "prohibited_interpretations": [
+        "diagnóstico", "rasgo psicológico", "severidad", "riesgo", "categoría clínica", "pronóstico"
+      ]
+    },
+    "reconstruction_error": {
+      "type": "number",
+      "meaning": "MSE de reconstrucción en escala original (indicador técnico de fidelidad)"
+    },
+    "uncertainty": {
+      "type": "null",
+      "note": "El modelo no estima incertidumbre; no se simula."
+    },
+    "status": {"enum": ["OK", "ADVERTENCIA", "NO_PROCESABLE"]},
+    "provenance": {
+      "fields": ["type", "model_version", "pipeline_version", "generated_at"],
+      "type_value": "inferred"
+    }
+  },
+  "rules": {
+    "no_clinical_semantics": true,
+    "reconstruction_error_is_not_clinical": true,
+    "reproducible_output": "misma entrada + misma model_version => misma salida exacta"
+  }
+}

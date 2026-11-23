@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0.0-SISAP-TUS-20261024",
+  "descripcion": "Contrato de salida del pipeline de inferencia latente de 12 dimensiones (Capa 5). Desacoplado de clustering GMM y de reglas diagnósticas clínicas.",
+  "modelos_soportados": {
+    "encoder_24_deployed": {
+      "archivo": "encoder.h5",
+      "sha256": "598313c683529d60f9e957ea521b97cb66f6cf391a7edaee106f0b65dc129cfe",
+      "n_input": 24,
+      "arquitectura": "24 -> 32 (selu) -> 24 (selu) -> 12 (linear)",
+      "estado_validacion": "Pesos verificados en HDF5; modelo reentrenado sin semilla fija en L19077-19122 sobre 24 variables"
+    },
+    "encoder_22_checkpoint_fase2": {
+      "archivo": "mfr_mejor_encoder_20260628_214641.h5",
+      "sha256": "fc82dd7f7fbc87f3b45fd4455b2a8011cca5451c6f1eb64b82ddda005c77151f",
+      "n_input": 22,
+      "arquitectura": "22 -> 32 (selu) -> 24 (selu) -> 12 (linear)",
+      "estado_validacion": "VERIFICADO_EXACTO (reproduce representaciones_completas.csv con error máximo 0.000000 en las 166x12 celdas)"
+    }
+  },
+  "dimensiones_latentes_orden": [
+    "latent_01",
+    "latent_02",
+    "latent_03",
+    "latent_04",
+    "latent_05",
+    "latent_06",
+    "latent_07",
+    "latent_08",
+    "latent_09",
+    "latent_10",
+    "latent_11",
+    "latent_12"
+  ],
+  "equivalencia_nombres_legacy": {
+    "latent_01": "Dim1",
+    "latent_02": "Dim2",
+    "latent_03": "Dim3",
+    "latent_04": "Dim4",
+    "latent_05": "Dim5",
+    "latent_06": "Dim6",
+    "latent_07": "Dim7",
+    "latent_08": "Dim8",
+    "latent_09": "Dim9",
+    "latent_10": "Dim10",
+    "latent_11": "Dim11",
+    "latent_12": "Dim12"
+  },
+  "estructura_respuesta": {
+    "status": "completed | failed | blocked_unverified_model",
+    "registro_id": "identificador_interno_anonimo",
+    "timestamp_utc": "ISO-8601",
+    "model_metadata": {
+      "model_id": "encoder_24_deployed | encoder_22_checkpoint_fase2",
+      "model_sha256": "hash_sha256_verificado",
+      "preproc_version": "1.0.0-MFR-REF-166",
+      "preproc_sha256": "hash_sha256_parametros",
+      "n_input_features": 24,
+      "clustering_incluido": false
+    },
+    "validation_summary": {
+      "input_valid": true,
+      "missing_fields": [],
+      "out_of_range_fields": [],
+      "warnings": []
+    },
+    "dimensions": {
+      "latent_01": null,
+      "latent_02": null,
+      "latent_03": null,
+      "latent_04": null,
+      "latent_05": null,
+      "latent_06": null,
+      "latent_07": null,
+      "latent_08": null,
+      "latent_09": null,
+      "latent_10": null,
+      "latent_11": null,
+      "latent_12": null
+    }
+  }
+}

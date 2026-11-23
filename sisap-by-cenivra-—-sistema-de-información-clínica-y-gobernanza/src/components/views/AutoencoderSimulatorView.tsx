@@ -423,32 +423,32 @@ Sello Institucional / SensorLab / Centro de Investigación`;
                 <LatentRadarChart dimensions={simulatedInference.latentDimensions} size={310} />
               </div>
 
-              {/* Composite Indices */}
-              <div className="bg-[var(--campo)] border border-[var(--sep)] rounded p-3 space-y-2">
+              {/* Verified Geometric Indices (MOD-03 / D-03) */}
+              <div className="bg-[var(--campo)] border border-[var(--sep)] rounded p-3 space-y-2 tabular-nums">
                 <div className="text-[11px] font-semibold text-[var(--texto)]">
-                  Índices Compuestos de Demostración:
+                  Métricas Geométricas Verificadas ({simulatedInference.modelId}):
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2 bg-[var(--panel)] rounded border border-[var(--sep-claro)]">
-                    <span className="text-[10px] text-[var(--texto-tenue)] block">Severidad Multidominio:</span>
+                    <span className="text-[10px] text-[var(--texto-tenue)] block">MSE Reconstrucción (Z):</span>
                     <span className="text-sm font-bold font-mono text-[var(--accion)]">
-                      {simulatedInference.summaryIndices.severidad_multidominio}
+                      {simulatedInference.verifiedMetrics.mse_z.toFixed(4)}
                     </span>
                   </div>
                   <div className="p-2 bg-[var(--panel)] rounded border border-[var(--sep-claro)]">
-                    <span className="text-[10px] text-[var(--texto-tenue)] block">Desregulación Emocional:</span>
+                    <span className="text-[10px] text-[var(--texto-tenue)] block">Distancia mediana p50:</span>
                     <span className="text-sm font-bold font-mono text-[var(--advertencia)]">
-                      {simulatedInference.summaryIndices.desregulacion_emocional_impulsiva}
+                      {simulatedInference.verifiedMetrics.distance_to_cohort_median_p50.toFixed(4)}
                     </span>
                   </div>
                 </div>
                 <div className="p-2 bg-[var(--panel)] rounded border border-[var(--sep-claro)] text-xs">
-                  <span className="text-[10px] text-[var(--texto-tenue)] block">Estratificación Demostrativa:</span>
+                  <span className="text-[10px] text-[var(--texto-tenue)] block">Estado Epistemológico (D-03):</span>
                   <span className="font-semibold text-[var(--texto)]">
                     {simulatedInference.summaryIndices.clase_latente_3b}
                   </span>
-                  <div className="text-[10px] text-[var(--texto-tenue)] mt-0.5">
-                    Probabilidad estimada: {(simulatedInference.summaryIndices.probabilidad_clase_3b * 100).toFixed(0)}%
+                  <div className="text-[10px] text-[var(--texto-tenue)] mt-0.5 font-mono">
+                    Colas extremas (&lt;p05 o &gt;p95): {simulatedInference.verifiedMetrics.n_outside_p05_p95} / 12 · Norma L2: {simulatedInference.verifiedMetrics.l2_norm.toFixed(4)}
                   </div>
                 </div>
               </div>
