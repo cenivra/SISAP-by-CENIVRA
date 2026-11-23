@@ -186,6 +186,26 @@ export const WorkDashboardView: React.FC<WorkDashboardViewProps> = ({
         )}
       </div>
 
+      {/* Ecosistema de Inteligencia Funcional (Acceso directo) */}
+      <div className="sisap-tarjeta border border-[var(--accion)]/40 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-xs font-bold text-[var(--texto)]">
+            Plataforma de Inteligencia Funcional, Analítica y Multimodal (5 Motores)
+          </div>
+          <p className="text-[11px] text-[var(--texto-sec)] mt-0.5">
+            Explore representaciones latentes 12D verificadas (SHA-256), trayectorias longitudinales (RCI), procesos narrativos E1–E5 y síntesis trazable.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate('ecosistema')}
+          className="sisap-btn text-xs py-1.5 px-3 inline-flex items-center gap-1.5"
+        >
+          <span>Abrir Ecosistema de Inteligencia</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
       {/* Patients Roster in Treatment */}
       <div className="sisap-tarjeta">
         <div className="flex items-center justify-between mb-3">
