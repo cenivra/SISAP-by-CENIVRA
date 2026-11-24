@@ -26,9 +26,10 @@ export function recordRun(input, { actor = 'system' } = {}) {
   const now = new Date().toISOString();
   db.prepare(
     `INSERT INTO model_runs
-       (run_id, engine, patient_id, reference_kind, reference_id, state, model_version,
-        preprocessing_version, input_hash, error_code, error_message, started_at, finished_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (run_id, engine, patient_id, reference_kind, reference_id, state,
+        model_id, model_version, artifact_sha256, preprocessing_version, input_schema_version,
+        input_hash, executed_by, actor_role, error_code, error_message, started_at, finished_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     runId,
     input.engine,
@@ -36,9 +37,14 @@ export function recordRun(input, { actor = 'system' } = {}) {
     input.reference_kind ?? null,
     input.reference_id ?? null,
     state,
+    input.model_id ?? input.model_version ?? 'unavailable',
     input.model_version ?? 'unavailable',
+    input.artifact_sha256 ?? null,
     input.preprocessing_version ?? null,
+    input.input_schema_version ?? null,
     input.input_hash ?? null,
+    actor,
+    input.actor_role ?? 'system',
     input.error_code ?? null,
     input.error_message ?? null,
     now,
@@ -53,8 +59,10 @@ export function listRuns({ limit = 50 } = {}) {
   const n = Math.min(Math.max(Number(limit) || 50, 1), 200);
   return db
     .prepare(
-      `SELECT run_id, engine, patient_id, state, model_version, preprocessing_version,
-              input_hash, error_code, started_at, finished_at
+      `SELECT run_id, engine, patient_id, reference_kind, reference_id, state,
+              COALESCE(model_id, model_version) AS model_id,
+              model_version, artifact_sha256, preprocessing_version, input_schema_version,
+              input_hash, executed_by, actor_role, error_code, started_at, finished_at
        FROM model_runs ORDER BY started_at DESC LIMIT ?`
     )
     .all(n);

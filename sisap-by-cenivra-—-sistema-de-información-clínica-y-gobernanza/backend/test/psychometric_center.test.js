@@ -45,9 +45,9 @@ test('PSYC-01: Migración 003 crea 3 tablas psicométricas, catálogo tiene 6 in
   openDatabase({ quiet: true });
   const h = healthCheck();
   assert.equal(h.ok, true);
-  assert.equal(h.tables, 15);
+  assert.equal(h.tables, 16);
   assert.deepEqual(h.missingTables, []);
-  assert.ok(h.migrationsApplied >= 3);
+  assert.ok(h.migrationsApplied >= 4);
 
   const catRes = await route({
     method: 'GET',

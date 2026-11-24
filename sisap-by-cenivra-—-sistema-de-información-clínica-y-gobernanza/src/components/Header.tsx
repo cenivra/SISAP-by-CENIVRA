@@ -1,7 +1,17 @@
 import React from 'react';
 import { UserAccount } from '../types/clinical';
 import { ROLES } from '../constants/clinicalConstants';
-import { Cloud, Eye, EyeOff, Sun, Moon, LogOut, FileText, Activity } from 'lucide-react';
+import {
+  Cloud,
+  Eye,
+  EyeOff,
+  Sun,
+  Moon,
+  LogOut,
+  FileText,
+  HardDrive,
+  ChevronRight,
+} from 'lucide-react';
 import { User as FirebaseUser } from 'firebase/auth';
 
 interface HeaderProps {
@@ -14,9 +24,12 @@ interface HeaderProps {
   onOpenDrafts: () => void;
   onOpenDriveModal: () => void;
   onOpenTelemetryModal?: () => void;
+  onOpenDesktopStorageModal?: () => void;
   isTelemetryEnabled?: boolean;
   googleUser: FirebaseUser | null;
   onLogout: () => void;
+  currentScreenLabel?: string;
+  appMode?: 'demo' | 'institutional';
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,116 +41,122 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   onOpenDrafts,
   onOpenDriveModal,
-  onOpenTelemetryModal,
-  isTelemetryEnabled,
+  onOpenDesktopStorageModal,
   googleUser,
   onLogout,
+  currentScreenLabel = 'Central de trabajo',
+  appMode = 'demo',
 }) => {
   const roleConfig = ROLES[currentUser.rol];
 
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-3 bg-[var(--panel)] border-b border-[var(--sep-claro)] px-4 py-2.5 shadow-xs">
-      <div className="flex items-center gap-2.5">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-base tracking-tight text-[var(--texto)]">SISAP</span>
-            <span className="text-[10px] text-[var(--texto-sec)] px-1.5 py-0.5 rounded border border-[var(--sep)]">by CENIVRA</span>
-            <span className="text-[11px] text-[var(--texto-tenue)] border border-[var(--sep-claro)] rounded-full px-2 py-0.5 hidden sm:inline-block">
-              v1.0 institucional
-            </span>
-          </div>
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-[var(--panel)] border-b border-[var(--sep)] px-4 py-1.5 overflow-hidden">
+      {/* Brand & Breadcrumb */}
+      <div className="flex items-center gap-2 min-w-0 shrink-1">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="font-bold text-sm tracking-tight text-[var(--texto)]">SISAP</span>
+          <span className="text-[11px] text-[var(--texto-tenue)] hidden sm:inline">by CENIVRA</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-1 text-xs text-[var(--texto-tenue)] border-l border-[var(--sep-claro)] pl-2.5 ml-1 min-w-0">
+          <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+          <span className="text-[var(--texto)] font-medium truncate max-w-[220px]">
+            {currentScreenLabel}
+          </span>
         </div>
       </div>
 
-      {/* Role & User badge */}
-      <div className="hidden md:flex items-center gap-2 border-l border-[var(--sep)] pl-3 ml-1">
-        <span className="text-xs font-medium text-[var(--texto)]">{currentUser.nombre || currentUser.u}</span>
-        <span className="text-[11px] bg-[var(--captura)] text-[var(--accion)] border border-[var(--borde)]/40 rounded-full px-2 py-0.5 font-mono">
+      {/* Professional Identity & Mode */}
+      <div className="hidden lg:flex items-center gap-2 border-l border-[var(--sep)] pl-3 min-w-0">
+        <span
+          className="text-xs text-[var(--texto-sec)] truncate max-w-[180px]"
+          title={currentUser.nombre || currentUser.u}
+        >
+          {currentUser.nombre || currentUser.u}
+        </span>
+        <span className="text-[11px] text-[var(--accion)] bg-[var(--captura)] rounded px-2 py-0.5 font-medium whitespace-nowrap shrink-0">
           {roleConfig?.n || currentUser.rol}
         </span>
+        {appMode === 'demo' && (
+          <span className="text-[10.5px] text-[var(--advertencia)] font-medium whitespace-nowrap shrink-0">
+            · Entorno de evaluación
+          </span>
+        )}
       </div>
 
-      {/* Right controls */}
-      <div className="ml-auto flex items-center gap-2">
-        {/* Drafts badge */}
-        <button
-          onClick={onOpenDrafts}
-          className="flex items-center gap-1.5 text-xs text-[var(--texto-sec)] bg-[var(--campo)] border border-[var(--borde)] hover:border-[var(--accion)] rounded-full px-2.5 py-1 transition-colors cursor-pointer"
-          title="Ver y recuperar borradores en curso"
-        >
-          <FileText className="w-3.5 h-3.5 text-[var(--advertencia)]" />
-          <span className="font-mono">Borradores: {draftsCount}</span>
-        </button>
-
-        {/* Anonymous Mode switch */}
-        <button
-          onClick={onToggleAnonymous}
-          className={`flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-colors cursor-pointer ${
-            isAnonymousMode
-              ? 'bg-[var(--advertencia)]/10 text-[var(--advertencia)] border-[var(--advertencia)]'
-              : 'bg-[var(--campo)] text-[var(--texto-sec)] border-[var(--borde)] hover:text-[var(--texto)]'
-          }`}
-          title={isAnonymousMode ? 'Modo anónimo activo: nombres ocultos' : 'Modo clínico: nombres visibles según permisos'}
-        >
-          {isAnonymousMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-          <span className="hidden sm:inline">{isAnonymousMode ? 'Vista anónima' : 'Vista clínica'}</span>
-        </button>
-
-        {/* Google Drive Status Button */}
-        <button
-          onClick={onOpenDriveModal}
-          className={`flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-all cursor-pointer ${
-            googleUser
-              ? 'bg-[var(--normal)]/10 text-[var(--normal)] border-[var(--normal)] hover:bg-[var(--normal)]/20'
-              : 'bg-[var(--campo)] text-[var(--texto-sec)] border-[var(--borde)] hover:border-[var(--accion)] hover:text-[var(--accion)]'
-          }`}
-          title={googleUser ? `Google Drive conectado como ${googleUser.email}` : 'Conectar con Google Drive para respaldos'}
-        >
-          <Cloud className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline font-mono">
-            {googleUser ? 'Drive Activo' : 'Conectar Drive'}
-          </span>
-        </button>
-
-        {/* Telemetry Opt-in Status Button */}
-        {onOpenTelemetryModal && (
+      {/* Right Action Bar (calm, slim, single line) */}
+      <div className="ml-auto flex items-center gap-1.5 shrink-0">
+        {draftsCount > 0 && (
           <button
-            onClick={onOpenTelemetryModal}
-            className={`flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-all cursor-pointer ${
-              isTelemetryEnabled
-                ? 'bg-[var(--normal)]/10 text-[var(--normal)] border-[var(--normal)]/40 hover:bg-[var(--normal)]/20'
-                : 'bg-[var(--campo)] text-[var(--texto-sec)] border-[var(--borde)] hover:text-[var(--texto)]'
-            }`}
-            title={
-              isTelemetryEnabled
-                ? 'Telemetría anónima activa (Opt-in). Haga clic para configurar.'
-                : 'Telemetría desactivada. Haga clic para revisar opciones de privacidad.'
-            }
+            type="button"
+            onClick={onOpenDrafts}
+            className="flex items-center gap-1.5 text-xs text-[var(--advertencia)] bg-[var(--advertencia)]/10 border border-[var(--advertencia)]/35 rounded px-2 py-1 transition-colors cursor-pointer tabular-nums whitespace-nowrap"
+            title="Ver borradores pendientes"
           >
-            <Activity className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline font-mono">
-              {isTelemetryEnabled ? 'Métricas ON' : 'Métricas OFF'}
-            </span>
+            <FileText className="w-3.5 h-3.5 shrink-0" />
+            <span>{draftsCount} borrador{draftsCount !== 1 ? 'es' : ''}</span>
           </button>
         )}
 
-        {/* Theme Toggle */}
         <button
-          onClick={onToggleTheme}
-          className="sisap-btn-sec p-1.5 rounded-full"
-          title={isLightMode ? 'Cambiar a modo oscuro (contraste clínico)' : 'Cambiar a modo claro'}
-          aria-label="Alternar tema"
+          type="button"
+          onClick={onToggleAnonymous}
+          className={`flex items-center gap-1.5 text-xs rounded px-2 py-1 border transition-colors cursor-pointer whitespace-nowrap ${
+            isAnonymousMode
+              ? 'bg-[var(--advertencia)]/10 text-[var(--advertencia)] border-[var(--advertencia)]/40'
+              : 'bg-[var(--campo)] text-[var(--texto-sec)] border-[var(--sep-claro)] hover:text-[var(--texto)]'
+          }`}
+          title={isAnonymousMode ? 'Modo anónimo activo' : 'Vista clínica'}
         >
-          {isLightMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          {isAnonymousMode ? <EyeOff className="w-3.5 h-3.5 shrink-0" /> : <Eye className="w-3.5 h-3.5 shrink-0" />}
+          <span className="hidden sm:inline">{isAnonymousMode ? 'Vista anónima' : 'Vista clínica'}</span>
         </button>
 
-        {/* Logout */}
+        {roleConfig?.administra && onOpenDesktopStorageModal && (
+          <button
+            type="button"
+            onClick={onOpenDesktopStorageModal}
+            className="flex items-center gap-1.5 text-xs text-[var(--texto-sec)] bg-[var(--campo)] border border-[var(--sep-claro)] hover:border-[var(--accion)] rounded px-2 py-1 transition-colors cursor-pointer whitespace-nowrap"
+            title="Almacenamiento local y respaldos"
+          >
+            <HardDrive className="w-3.5 h-3.5 text-[var(--normal)] shrink-0" />
+            <span className="hidden xl:inline">Respaldos</span>
+          </button>
+        )}
+
+        {roleConfig?.exportar_drive && (
+          <button
+            type="button"
+            onClick={onOpenDriveModal}
+            className={`flex items-center gap-1.5 text-xs rounded px-2 py-1 border transition-colors cursor-pointer whitespace-nowrap ${
+              googleUser
+                ? 'bg-[var(--normal)]/10 text-[var(--normal)] border-[var(--normal)]/40'
+                : 'bg-[var(--campo)] text-[var(--texto-sec)] border-[var(--sep-claro)] hover:text-[var(--texto)]'
+            }`}
+            title={googleUser ? `Google Drive conectado como ${googleUser.email}` : 'Respaldo en Google Drive'}
+          >
+            <Cloud className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden xl:inline">{googleUser ? 'Drive activo' : 'Drive'}</span>
+          </button>
+        )}
+
         <button
+          type="button"
+          onClick={onToggleTheme}
+          className="sisap-btn-sec p-1.5"
+          title={isLightMode ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
+          aria-label="Alternar tema"
+        >
+          {isLightMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+        </button>
+
+        <button
+          type="button"
           onClick={onLogout}
-          className="sisap-btn-sec px-2 py-1 text-xs"
+          className="sisap-btn-sec px-2.5 py-1 text-xs whitespace-nowrap"
           title="Cerrar sesión actual"
         >
-          <LogOut className="w-3.5 h-3.5" />
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
           <span className="hidden sm:inline">Salir</span>
         </button>
       </div>

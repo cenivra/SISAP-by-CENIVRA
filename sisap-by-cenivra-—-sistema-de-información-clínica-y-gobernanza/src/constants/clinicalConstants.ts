@@ -207,7 +207,7 @@ export const INSTRUMENTOS_CATALOGO = [
   {
     id: 'STAXI_2',
     n: 'STAXI-2 — Inventario de Expresión de Ira Estado-Rasgo',
-    items: 44,
+    items: 49,
     cadencia: 'inicial',
     rango_items: '1 (Casi nunca) a 4 (Casi siempre)',
     punt: ['state', 'trait', 'temperamento'],

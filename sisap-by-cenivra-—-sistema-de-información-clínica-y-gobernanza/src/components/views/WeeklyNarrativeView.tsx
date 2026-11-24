@@ -292,8 +292,8 @@ export const WeeklyNarrativeView: React.FC<WeeklyNarrativeViewProps> = ({
       </div>
 
       {/* Target patient banner */}
-      <div className="p-3 bg-[var(--panel)] border border-[var(--sep-claro)] rounded flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-4">
+      <div className="wb-surface p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
           <div>
             <span className="text-[var(--texto-sec)] mr-1">Expediente:</span>
             <span className="font-mono font-bold text-[var(--accion)]">{selectedPseudonym}</span>
@@ -302,6 +302,7 @@ export const WeeklyNarrativeView: React.FC<WeeklyNarrativeViewProps> = ({
             <span className="text-[var(--texto-sec)] mr-1">Instrumento:</span>
             <span className="font-medium text-[var(--texto)]">Guía Canónica V1.0 (8 ítems)</span>
           </div>
+          <span className="est-warn">Análisis narrativo automático pendiente; captura cualitativa activa</span>
         </div>
         {saveStatus && (
           <span className="text-[var(--normal)] font-mono text-[11px] flex items-center gap-1">

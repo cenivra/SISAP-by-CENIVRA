@@ -105,6 +105,7 @@ export function healthCheck() {
     'psychometric_evaluations',
     'psychometric_item_responses',
     'psychometric_results',
+    'model_governance_registry',
   ];
 
   const present = new Set(

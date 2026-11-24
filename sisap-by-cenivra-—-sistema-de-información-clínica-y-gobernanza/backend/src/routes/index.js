@@ -15,6 +15,8 @@ import { healthCheck } from '../db/index.js';
 import { Errors } from '../utils/errors.js';
 import {
   getAutoencoderStatusAndReference,
+  getModelGovernanceRegistry,
+  setActiveDefaultModel,
   executeAutoencoderInference,
   inferCandidate17ForComparison,
 } from '../services/autoencoderService.js';
@@ -48,12 +50,18 @@ import {
  * `ctx` = { method, url, query, body, io }
  */
 export async function route(ctx) {
-  const { method, pathname, query, body } = ctx;
+  const { method, pathname, query, body, headers = {} } = ctx;
+  const actorHeader = headers['x-sisap-actor'] ? String(headers['x-sisap-actor']).trim() : '';
+  const roleHeader = headers['x-sisap-role'] ? String(headers['x-sisap-role']).trim() : '';
+  const actorCtx = {
+    actor: actorHeader || 'clinician_local',
+    actorRole: roleHeader || 'clinician',
+  };
 
   // ---- Health -------------------------------------------------------------
   if (method === 'GET' && pathname === '/api/health') {
     const h = healthCheck();
-    return { status: h.ok ? 200 : 503, body: h };
+    return { status: h.ok ? 200 : 503, body: { ...h, service: 'sisap-local-backend' } };
   }
 
   if (method === 'GET' && pathname === '/api/migrations/status') {
@@ -112,22 +120,34 @@ export async function route(ctx) {
 
   // ---- Evaluaciones -------------------------------------------------------
   if (method === 'POST' && pathname === '/api/evaluations') {
-    const res = createEvaluation(body, {});
-    recordEvent({ action: 'evaluation.create', details: `evaluation_id=${res.evaluation_id}` });
+    const res = createEvaluation(body, actorCtx);
+    recordEvent({
+      ...actorCtx,
+      action: 'evaluation.create',
+      details: `evaluation_id=${res.evaluation_id}`,
+    });
     return { status: 201, body: res };
   }
 
   // ---- Observaciones semanales -------------------------------------------
   if (method === 'POST' && pathname === '/api/weekly-observations') {
-    const res = createWeeklyObservation(body, {});
-    recordEvent({ action: 'weekly.create', details: `observation_id=${res.observation_id}` });
+    const res = createWeeklyObservation(body, actorCtx);
+    recordEvent({
+      ...actorCtx,
+      action: 'weekly.create',
+      details: `observation_id=${res.observation_id}`,
+    });
     return { status: 201, body: res };
   }
 
   // ---- Model runs (trazabilidad) -----------------------------------------
   if (method === 'POST' && pathname === '/api/model-runs') {
-    const res = recordRun(body, {});
-    recordEvent({ action: 'model_run.record', details: `run_id=${res.run_id} state=${res.state}` });
+    const res = recordRun(body, actorCtx);
+    recordEvent({
+      ...actorCtx,
+      action: 'model_run.record',
+      details: `run_id=${res.run_id} state=${res.state}`,
+    });
     return { status: 201, body: res };
   }
 
@@ -167,19 +187,38 @@ export async function route(ctx) {
     return { status: 200, body: getAutoencoderStatusAndReference() };
   }
 
+  if (method === 'GET' && pathname === '/api/engines/autoencoder/governance') {
+    return { status: 200, body: getModelGovernanceRegistry() };
+  }
+
+  if (method === 'POST' && pathname === '/api/engines/autoencoder/governance/active-model') {
+    const res = setActiveDefaultModel({
+      modelId: body?.model_id,
+      actor: actorCtx.actor,
+      actorRole: actorCtx.actorRole,
+      justification: body?.justification || '',
+    });
+    return { status: 200, body: res };
+  }
+
   if (method === 'POST' && pathname === '/api/engines/autoencoder/infer') {
-    const res = executeAutoencoderInference(body, {});
+    const res = executeAutoencoderInference(body, actorCtx);
     const httpStatus = res.status === 'failed' ? 422 : 200;
     return { status: httpStatus, body: res };
   }
 
   if (method === 'POST' && pathname === '/api/engines/autoencoder/candidate17/infer') {
+    if (actorCtx.actorRole && !new Set(['superadmin', 'admin']).has(actorCtx.actorRole)) {
+      throw Errors.forbidden(
+        'La ejecución experimental 17D está restringida exclusivamente a roles administrativos.'
+      );
+    }
     const res = inferCandidate17ForComparison(body);
     return { status: res.status === 'REJECTED' ? 422 : 200, body: res };
   }
 
   if (method === 'POST' && pathname === '/api/follow-ups') {
-    const res = createFollowUpEvaluation(body, {});
+    const res = createFollowUpEvaluation(body, actorCtx);
     return { status: 201, body: res };
   }
 
@@ -195,6 +234,7 @@ export async function route(ctx) {
     const patientId = decodeURIComponent(m[1]);
     const report = getPatientDecisionSupportReport(patientId);
     recordEvent({
+      ...actorCtx,
       action: 'patient.intelligence.read',
       subjectPseudonym: report.patient.pseudonym,
       details: `modalities=${report.multimodal_alignment.active_modalities}/5`,
@@ -204,7 +244,7 @@ export async function route(ctx) {
 
   if (method === 'POST' && (m = pathname.match(/^\/api\/patients\/([^/]+)\/formulations$/))) {
     const patientId = decodeURIComponent(m[1]);
-    const created = createClinicalFormulation(patientId, body, {});
+    const created = createClinicalFormulation(patientId, body, actorCtx);
     return { status: 201, body: created };
   }
 

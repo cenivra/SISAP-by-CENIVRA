@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  BarChart3,
   BrainCircuit,
   CheckCircle2,
   ChevronRight,
@@ -48,6 +49,12 @@ import {
   scorePsychometricEvaluation,
 } from '../../psychometrics/scoringEngine';
 import { ScoringMode } from '../../services/scalesEngine';
+import {
+  EVALUATION_MOMENTS,
+  EvaluationMomentId,
+  normalizeMomentId,
+  PsychometricAutoencoderCharts,
+} from './PsychometricAutoencoderCharts';
 
 interface PsychometricCenterViewProps {
   currentUser: UserAccount;
@@ -58,7 +65,7 @@ interface PsychometricCenterViewProps {
   onNavigate?: (screen: any, pseudonym?: string) => void;
 }
 
-type CenterSubView = 'catalog' | 'apply' | 'review' | 'history';
+type CenterSubView = 'catalog' | 'apply' | 'review' | 'history' | 'charts';
 type NavMode = 'single_page' | 'blocks';
 
 export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
@@ -72,7 +79,7 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
   // Selección de paciente y contexto
   const [patientQuery, setPatientQuery] = useState<string>('');
   const [evaluatorName, setEvaluatorName] = useState<string>(currentUser.nombre || currentUser.u);
-  const [sessionContext, setSessionContext] = useState<string>('evaluacion_clinica');
+  const [sessionContext, setSessionContext] = useState<string>('ingreso_basal');
   const [sessionNumber, setSessionNumber] = useState<string>('1');
   const [notes, setNotes] = useState<string>('');
 
@@ -365,15 +372,37 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
     return list;
   }, [activeConfig.items, navMode, currentBlock, showOnlyPending, responsesByItemId]);
 
-  const completedInstrumentsSet = useMemo(() => {
-    const s = new Set<string>();
+  const activeMoment: EvaluationMomentId = normalizeMomentId(sessionContext);
+  const legacyEvaluations = useMemo(
+    () => StorageService.getEvaluations().filter((e) => e.expediente === selectedPseudonym),
+    [selectedPseudonym, bundles]
+  );
+
+  const momentCounts = useMemo(() => {
+    const counts: Record<EvaluationMomentId, Set<string>> = {
+      ingreso_basal: new Set(),
+      mitad_tratamiento: new Set(),
+      egreso_alta: new Set(),
+    };
     for (const b of bundles) {
       if (b.evaluation.application_status === 'completed') {
-        s.add(b.evaluation.instrument_id);
+        const m = normalizeMomentId(b.evaluation.session_context);
+        counts[m].add(b.evaluation.instrument_id);
       }
     }
-    return s;
-  }, [bundles]);
+    const latestLegacy = legacyEvaluations[0];
+    if (latestLegacy) {
+      if (latestLegacy.raw_bis_11?.trim()) counts.ingreso_basal.add('BIS-11');
+      if (latestLegacy.raw_bsl_23?.trim()) counts.ingreso_basal.add('BSL-23');
+      if (latestLegacy.raw_gad_7?.trim()) counts.ingreso_basal.add('GAD-7');
+      if (latestLegacy.raw_eros?.trim()) counts.ingreso_basal.add('EROS');
+      if (latestLegacy.raw_bads?.trim()) counts.ingreso_basal.add('BADS');
+      if (latestLegacy.raw_staxi_2?.trim()) counts.ingreso_basal.add('STAXI-2');
+    }
+    return counts;
+  }, [bundles, legacyEvaluations]);
+
+  const completedInstrumentsSet = momentCounts[activeMoment];
 
   // ========================== RENDER PRINCIPAL ===============================
   return (
@@ -384,10 +413,10 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
           <div className="flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-[var(--accion)]" />
             <h1 className="text-lg font-bold text-[var(--texto)]">
-              Centro de Evaluación Psicométrica
+              Centro Psicométrico
             </h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--accion)]/15 text-[var(--accion)] border border-[var(--accion)]/30">
-              Catálogo {CATALOG_METADATA.catalogVersion} · 6 Instrumentos Activos
+            <span className="text-[11px] text-[var(--texto-sec)]">
+              Catálogo {CATALOG_METADATA.catalogVersion} · 6 instrumentos activos
             </span>
           </div>
           <p className="text-xs text-[var(--texto-sec)] mt-0.5">
@@ -430,13 +459,24 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
             <History className="w-3.5 h-3.5" />
             Historial y Longitudinal ({bundles.length})
           </button>
+          <button
+            onClick={() => setSubView('charts')}
+            className={`px-3 py-1.5 text-xs rounded-[var(--r)] border cursor-pointer flex items-center gap-1.5 ${
+              subView === 'charts'
+                ? 'bg-[var(--accion)] text-white border-[var(--accion)] font-semibold'
+                : 'bg-[var(--panel)] text-[var(--texto-sec)] border-[var(--borde)] hover:bg-[var(--captura)]'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            Gráficas Autoencoder 12D
+          </button>
           {onNavigate && (
             <button
               onClick={() => onNavigate('ecosistema', selectedPseudonym)}
               className="px-3 py-1.5 text-xs rounded-[var(--r)] border border-[var(--normal)]/40 bg-[var(--normal)]/10 text-[var(--normal)] hover:bg-[var(--normal)]/20 cursor-pointer flex items-center gap-1.5"
             >
               <BrainCircuit className="w-3.5 h-3.5" />
-              Ecosistema 5 Motores
+              Inteligencia funcional
             </button>
           )}
         </div>
@@ -448,21 +488,21 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
           <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--texto-tenue)] mb-1">
             Buscar y seleccionar paciente
           </label>
-          <div className="flex gap-1.5">
-            <div className="relative flex-1">
+          <div className="flex gap-1.5 min-w-0">
+            <div className="relative flex-1 min-w-0">
               <Search className="w-3.5 h-3.5 text-[var(--texto-tenue)] absolute left-2.5 top-2.5" />
               <input
                 type="text"
                 value={patientQuery}
                 onChange={(e) => setPatientQuery(e.target.value)}
-                placeholder="Buscar por TUS-XXXX o expediente..."
+                placeholder="Buscar por TUS-XXXX..."
                 className="w-full pl-8 pr-2 py-1.5 text-xs bg-[var(--fondo)] border border-[var(--borde)] rounded-[var(--r)] text-[var(--texto)]"
               />
             </div>
             <select
               value={selectedPseudonym}
               onChange={(e) => onSelectPseudonym && onSelectPseudonym(e.target.value)}
-              className="px-2 py-1.5 text-xs font-mono font-bold bg-[var(--fondo)] border border-[var(--borde)] rounded-[var(--r)] text-[var(--texto)]"
+              className="w-[155px] shrink-0 truncate px-2 py-1.5 text-xs font-mono font-bold bg-[var(--fondo)] border border-[var(--borde)] rounded-[var(--r)] text-[var(--texto)]"
             >
               {filteredPatients.map((p) => {
                 const pd = padron.find((x) => x.seudonimo === p.seudonimo);
@@ -500,18 +540,17 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
 
         <div className="md:col-span-3">
           <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--texto-tenue)] mb-1">
-            Contexto y sesión
+            Momento de evaluación y sesión
           </label>
           <div className="flex gap-1.5">
             <select
-              value={sessionContext}
+              value={activeMoment}
               onChange={(e) => setSessionContext(e.target.value)}
               className="flex-1 px-2 py-1.5 text-xs bg-[var(--fondo)] border border-[var(--borde)] rounded-[var(--r)] text-[var(--texto)]"
             >
-              <option value="ingreso_basal">Ingreso / Evaluación Basal</option>
-              <option value="evaluacion_clinica">Evaluación Clínica</option>
-              <option value="seguimiento_longitudinal">Seguimiento Longitudinal</option>
-              <option value="egreso_alta">Valoración de Egreso / Alta</option>
+              <option value="ingreso_basal">Evaluación Inicial (Basal)</option>
+              <option value="mitad_tratamiento">Mitad de tratamiento</option>
+              <option value="egreso_alta">Evaluación Final (Egreso)</option>
             </select>
             <input
               type="number"
@@ -570,17 +609,96 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
       {/* ===================================================================== */}
       {subView === 'catalog' && (
         <div className="space-y-4">
+          {/* Persistent D-06 6-Instrument Readiness Bar */}
+          <div className="wb-surface-elev p-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="wb-eyebrow">
+                  Cobertura de Compuerta D-06 · Corte activo ({selectedPseudonym})
+                </span>
+                <div className="flex flex-wrap items-center gap-1">
+                  {EVALUATION_MOMENTS.map((m) => {
+                    const cnt = momentCounts[m.id].size;
+                    const isActive = activeMoment === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSessionContext(m.id)}
+                        className={`px-2 py-0.5 rounded text-[10.5px] font-medium border cursor-pointer transition-colors ${
+                          isActive
+                            ? 'bg-[var(--accion)] text-white border-[var(--accion)]'
+                            : 'bg-[var(--campo)] text-[var(--texto-sec)] border-[var(--sep-claro)] hover:text-[var(--texto)]'
+                        }`}
+                      >
+                        {m.shortLabel}: {cnt}/6
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {ACTIVE_INSTRUMENT_IDS.map((instId) => {
+                  const done = completedInstrumentsSet.has(instId);
+                  return (
+                    <span
+                      key={instId}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10.5px] border ${
+                        done
+                          ? 'border-[var(--normal)]/40 bg-[var(--normal)]/10 text-[var(--normal)] font-semibold'
+                          : 'border-[var(--sep-claro)] bg-[var(--campo)] text-[var(--texto-tenue)]'
+                      }`}
+                    >
+                      <span>{done ? '✓' : '○'}</span>
+                      <span>{instId}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 ml-auto">
+              <span className={`tabular-nums ${completedInstrumentsSet.size === 6 ? 'est-ok' : 'est-warn'}`}>
+                {completedInstrumentsSet.size}/6 {completedInstrumentsSet.size === 6 ? 'Corte D-06 Completo' : 'Corte Parcial'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSubView('charts')}
+                className="sisap-btn-sec text-xs py-1 px-2.5 inline-flex items-center gap-1"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-[var(--accion)]" />
+                <span>Ver Gráficas 12D</span>
+              </button>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('ecosistema', selectedPseudonym)}
+                  className="sisap-btn-sec text-xs py-1 px-2.5 inline-flex items-center gap-1"
+                >
+                  <BrainCircuit className="w-3.5 h-3.5 text-[var(--accion)]" />
+                  <span>Inteligencia funcional</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {ACTIVE_INSTRUMENT_IDS.map((instId) => {
               const selVer = selectedVersions[instId];
               const spec = resolveInstrumentConfig(instId, selVer);
               const draftForInst = bundles.find(
-                (b) => b.evaluation.instrument_id === instId && b.evaluation.application_status === 'draft'
+                (b) =>
+                  b.evaluation.instrument_id === instId &&
+                  b.evaluation.application_status === 'draft' &&
+                  normalizeMomentId(b.evaluation.session_context) === activeMoment
               );
               const completedForInst = bundles.filter(
                 (b) => b.evaluation.instrument_id === instId && b.evaluation.application_status === 'completed'
               );
-              const latestCompleted = completedForInst[0] || null;
+              const completedInMoment = completedForInst.filter(
+                (b) => normalizeMomentId(b.evaluation.session_context) === activeMoment
+              );
+              const latestCompleted = completedInMoment[0] || null;
               const pendingTextCount = spec.items.filter((it) => it.pendingAuthorizedText).length;
 
               return (
@@ -605,13 +723,19 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
                         </h3>
                       </div>
 
-                      {completedForInst.length > 0 ? (
+                      {completedInMoment.length > 0 ? (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--normal)]/15 text-[var(--normal)] border border-[var(--normal)]/30 shrink-0">
-                          {completedForInst.length} aplicada(s)
+                          Aplicada en corte ({completedForInst.length} total)
+                        </span>
+                      ) : completedInstrumentsSet.has(instId) ? (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--normal)]/15 text-[var(--normal)] border border-[var(--normal)]/30 shrink-0">
+                          Completa en corte
                         </span>
                       ) : (
                         <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--fondo)] text-[var(--texto-tenue)] border border-[var(--borde)] shrink-0">
-                          Sin registro
+                          {completedForInst.length > 0
+                            ? `Pendiente aquí (${completedForInst.length} prev.)`
+                            : 'Sin registro'}
                         </span>
                       )}
                     </div>
@@ -1642,6 +1766,20 @@ export const PsychometricCenterView: React.FC<PsychometricCenterViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+      {subView === 'charts' && (
+        <PsychometricAutoencoderCharts
+          pseudonym={selectedPseudonym}
+          patientClinico={activePatientClinico}
+          bundles={bundles}
+          legacyEvaluations={legacyEvaluations}
+          activeMoment={activeMoment}
+          onSelectMoment={(m) => setSessionContext(m)}
+          onStartInstrument={(instId, moment) => {
+            setSessionContext(moment);
+            startNewApplication(instId, selectedVersions[instId]);
+          }}
+        />
       )}
     </div>
   );

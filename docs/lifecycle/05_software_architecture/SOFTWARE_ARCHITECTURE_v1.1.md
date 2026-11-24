@@ -18,7 +18,7 @@
 
 | Versión | Fecha | Descripción | Responsable |
 |---|---|---|---|
-| `1.1.0-draft` | 2026-11-23 | Documentación arquitectónica completa del sistema real en producción/desarrollo `v1.1.0`: Electron v45, React 19 + TS, Backend Node.js ESM (`127.0.0.1:8080`), SQLite WAL (15 tablas), Motores 1..5, Centro Psicométrico y diagramas actualizados. | Equipo de Ingeniería SISAP |
+| `1.1.0-draft` | 2026-11-23 | Documentación arquitectónica completa del sistema real en producción/desarrollo `v1.1.0`: Electron v45 (NSIS + Portable `.exe`, puerto loopback dinámico, IPC de respaldos en `%APPDATA%`), React 19 + TS (Estación de Trabajo técnica y cinta contextual `WorkbenchContextRibbon`), Backend Node.js ESM (`127.0.0.1`), SQLite WAL (16 tablas, migración `004` con `model_governance_registry` y trazabilidad de 8 campos), Motores 1..5, Centro Psicométrico, separación Modo Institucional vs Evaluación y diagramas actualizados. | Equipo de Ingeniería SISAP |
 
 ---
 
@@ -60,8 +60,8 @@ flowchart TB
     E_AE["engines/autoencoder/ (model_registry.json, pesos JSON SHA-256, R 01..07)"]
   end
 
-  subgraph DATA["Persistencia Local SQLite WAL (15 tablas, FK ON)"]
-    DB["sisap_test.sqlite3 / %APPDATA%/sisap/data/local/"]
+  subgraph DATA["Persistencia Local SQLite WAL (16 tablas, FK ON)"]
+    DB["sisap_clinical.sqlite3 / %APPDATA%/SISAP by CENIVRA/data/local/"]
   end
 
   UI --> FRONT_SVC
@@ -94,12 +94,13 @@ flowchart LR
 
 ---
 
-## 3. Modelo de Datos y Persistencia (SQLite WAL — 15 Tablas en 3 Migraciones)
+## 3. Modelo de Datos y Persistencia (SQLite WAL — 16 Tablas en 4 Migraciones)
 
 Las migraciones son estrictamente aditivas:
 - **`001_initial_schema.sql` (10 tablas núcleo `v1.0.0`):** `schema_migrations`, `patients`, `clinical_records`, `initial_evaluations`, `scale_responses`, `scale_scores`, `weekly_observations`, `model_runs`, `model_outputs`, `audit_events`.
 - **`002_intelligence_engines.sql` (+2 tablas):** `follow_up_evaluations`, `clinical_formulations`.
 - **`003_psychometric_center.sql` (+3 tablas en 3 niveles):** `psychometric_evaluations`, `psychometric_item_responses`, `psychometric_results`.
+- **`004_model_governance_and_traceability.sql` (+1 tabla y +5 columnas auditables):** `model_governance_registry` (sembrado de `encoder_22_checkpoint_fase2` como `ACTIVE_DEFAULT`) y extensión de `model_runs` con `model_id`, `artifact_sha256`, `input_schema_version`, `executed_by`, `actor_role`.
 
 ### Diagrama 3: Modelo Entidad-Relación (`erDiagram`)
 
@@ -128,11 +129,11 @@ erDiagram
 
 | Dominio | Rutas HTTP (`127.0.0.1:8080`) | Servicio / Motor Responsable | Restricción / Validación Clave |
 |---|---|---|---|
-| **Salud y Migraciones** | `GET /api/health`, `GET /api/migrations/status` | `db/index.js` | Verifica 15 tablas, `PRAGMA foreign_keys = ON` y migraciones `1..3`. |
+| **Salud y Migraciones** | `GET /api/health`, `GET /api/migrations/status` | `db/index.js` | Verifica 16 tablas, `PRAGMA foreign_keys = ON`, `service: 'sisap-local-backend'` y migraciones `1..4`. |
 | **Pacientes y Expediente** | `GET /api/patients/search`, `GET /api/patients/duplicates`, `GET /api/patients/:id/record`, `POST /api/patients` | `patientService.js` | Consultas parametrizadas; `allow_duplicate` explícito en colisión nombre/CURP. |
 | **Evaluación Base y Semanal** | `POST /api/evaluations`, `POST /api/weekly-observations` | `evaluationService.js` | Transacción atómica; registro WORM automático. |
 | **Centro Psicométrico** | `GET /api/psychometrics/catalog`, `POST /api/psychometrics/score`, `POST /api/psychometrics/evaluations`, `GET /api/patients/:id/psychometrics`, `GET /api/psychometrics/evaluations/:id`, `POST /api/psychometrics/evaluations/:id/recalculate` | `instrumentCatalog.js`, `scoringEngine.js`, `psychometricService.js` | Excluye `OCI-R`; bloquea sobrescritura `completed` con `HTTP 409`; detecta `versionMismatchWarning`. |
-| **Motor 1 (Autoencoder)** | `GET /api/engines/autoencoder/reference`, `POST /api/engines/autoencoder/infer`, `POST /api/engines/autoencoder/candidate17/infer` | `autoencoderService.js`, `autoencoderInferenceEngine.js` | Valida SHA-256; compuerta `D-06` (`HTTP 422` ante faltantes); `17v` aislado como experimental. |
+| **Motor 1 (Autoencoder y Gobernanza)** | `GET /api/engines/autoencoder/reference`, `GET /api/engines/autoencoder/governance`, `POST /api/engines/autoencoder/governance/active-model`, `POST /api/engines/autoencoder/infer`, `POST /api/engines/autoencoder/candidate17/infer` | `autoencoderService.js`, `autoencoderInferenceEngine.js` | Valida SHA-256 sin fallback; compuerta `D-06` (`HTTP 422`); bloquea con `HTTP 403` cambios o overrides no administrativos; persiste 8 campos de trazabilidad en `model_runs`. |
 | **Motores 2..5 (Ecosistema)** | `GET /api/engines/status`, `POST /api/follow-ups`, `GET /api/patients/:id/follow-ups`, `GET /api/patients/:id/intelligence`, `POST /api/patients/:id/formulations` | `analyticalService`, `narrativeService`, `multimodalService`, `decisionSupportService` | `automatic_diagnosis_disabled = true`, `pending_human_review` obligatorio, `inference_ready: false` en ONNX ausente. |
 | **Auditoría WORM** | `GET /api/audit/events`, `GET /api/audit/verify`, `GET/POST /api/model-runs` | `auditService.js`, `modelRunService.js` | Cadena SHA-256 verificable + triggers `BEFORE UPDATE/DELETE`. |
 

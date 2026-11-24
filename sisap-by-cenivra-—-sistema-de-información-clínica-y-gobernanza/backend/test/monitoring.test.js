@@ -26,7 +26,7 @@ test('MON-01: GET /api/monitoring/metrics expone salud BD, memoria, WORM y conta
   });
   assert.equal(res.status, 200);
   assert.equal(res.body.database.ok, true);
-  assert.equal(res.body.database.tables, 15);
+  assert.equal(res.body.database.tables, 16);
   assert.equal(res.body.audit_worm.valid, true);
   assert.equal(res.body.phi_exported, false);
   assert.ok(res.body.memory.rss_bytes > 0);

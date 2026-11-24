@@ -290,8 +290,9 @@ export const InitialEvaluationView: React.FC<InitialEvaluationViewProps> = ({
       detalles: `BIS-11=${bisPreview.total}, GAD-7=${gadPreview.total}, BSL-23=${bslPreview.total_integrado}, MSE_z=${inferenceResult.verifiedMetrics.mse_z.toFixed(4)}`,
     });
 
-    // Intentar sincronización silenciosa con el backend SQLite si existe el paciente
+    // Sincronización con backend SQLite: resuelve patient_id por seudónimo y persiste model_runs con el modelo activo gobernado
     let backendSynced = false;
+    let persistedRunId: string | null = null;
     try {
       const bisItems = parseRawNumbersStrict(rawBis11, 30, modoScoring === 'excel_canonico' ? 0 : 1, 4, 'BIS-11').items;
       const badsItems = parseRawNumbersStrict(rawBads, 25, 0, 6, 'BADS').items;
@@ -301,11 +302,21 @@ export const InitialEvaluationView: React.FC<InitialEvaluationViewProps> = ({
       const bslCore = parseRawNumbersStrict(rawBsl23, 23, 0, 4, 'BSL-23').items;
       const bslBeh = parseRawNumbersStrict(rawBsl23Conductual, 11, 0, 4, 'BSL-23 Conductual').items;
 
-      await PatientApiService.runAutoencoderInference({
+      let matchedPatientId: string | undefined;
+      try {
+        const searchMatches = await PatientApiService.searchPatients(selectedPseudonym);
+        matchedPatientId = searchMatches.find(
+          (m) => m.pseudonym === selectedPseudonym || m.patient_id === selectedPseudonym
+        )?.patient_id;
+      } catch {
+        matchedPatientId = undefined;
+      }
+
+      const apiRes = await PatientApiService.runAutoencoderInference({
+        patient_id: matchedPatientId,
         id_registro: evaluationRecord.id,
-        model_id: 'encoder_22_checkpoint_fase2',
         modo_scoring: modoScoring,
-        persist: false,
+        persist: Boolean(matchedPatientId),
         edad,
         tiempo_consumo: tiempoConsumo,
         trat_previos: tratamientosPrevios,
@@ -322,14 +333,19 @@ export const InitialEvaluationView: React.FC<InitialEvaluationViewProps> = ({
           general_score_0_1: bslGeneral01,
         },
       });
-      backendSynced = true;
+      backendSynced = Boolean(apiRes && apiRes.status !== 'failed');
+      persistedRunId = apiRes?.persistence?.persisted ? apiRes?.persistence?.run_id || null : null;
     } catch {
       backendSynced = false;
     }
 
     setSaveStatus(
       `Evaluación y perfil latente 12D registrados en expediente ${selectedPseudonym} (${
-        backendSynced ? 'verificado también en backend local' : 'persistido en almacén local'
+        persistedRunId
+          ? `persistido en SQLite model_runs (${persistedRunId})`
+          : backendSynced
+          ? 'verificado también en backend local'
+          : 'persistido en almacén local'
       }).`
     );
   };
@@ -338,11 +354,11 @@ export const InitialEvaluationView: React.FC<InitialEvaluationViewProps> = ({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--sep-claro)]">
         <div>
-          <h2 className="text-base font-bold text-[var(--texto)]">
-            Evaluación Inicial · Batería Psicométrica (6 Instrumentos) y Pipeline Autoencoder
+          <h2 className="text-lg font-bold tracking-tight text-[var(--texto)]">
+            Evaluación Inicial · Batería Psicométrica (6 Instrumentos)
           </h2>
           <p className="text-xs text-[var(--texto-sec)]">
-            Expediente: <span className="font-mono font-bold">{selectedPseudonym}</span> · Aplicó: {aplico} · Contrato D-06 sin imputación silenciosa
+            Aplicó: {aplico} · Compuerta D-06 sin imputación silenciosa
           </p>
         </div>
 

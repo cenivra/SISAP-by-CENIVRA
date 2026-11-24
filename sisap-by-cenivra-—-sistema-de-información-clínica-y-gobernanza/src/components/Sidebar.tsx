@@ -19,15 +19,16 @@ import {
   Layers,
   BrainCircuit,
   ClipboardCheck,
+  Scale,
 } from 'lucide-react';
 
 export type NavScreen =
   | 'inicio'
   | 'centro_psicometrico'
   | 'ecosistema'
+  | 'apoyo_decisiones'
   | 'pacientes'
   | 'entrevista'
-  | 'eval_inicial'
   | 'seguimiento'
   | 'evolucion'
   | 'familiar'
@@ -45,14 +46,14 @@ interface NavItem {
   id: NavScreen;
   label: string;
   icon: React.ReactNode;
-  badge?: string;
-  badgeColor?: 'ok' | 'warn' | 'risk' | 'pend';
   requiresAdmin?: boolean;
   requiresBlindLayer?: boolean;
+  requiresDrive?: boolean;
 }
 
 interface NavGroup {
   title: string;
+  requiresAdminGroup?: boolean;
   items: NavItem[];
 }
 
@@ -62,10 +63,31 @@ interface SidebarProps {
   roleConfig: RoleConfig;
 }
 
+export const SCREEN_LABELS: Record<NavScreen, string> = {
+  inicio: 'Central de trabajo',
+  pacientes: 'Padrón y expedientes',
+  entrevista: 'Entrevista exploratoria',
+  centro_psicometrico: 'Centro psicométrico',
+  seguimiento: 'Seguimiento longitudinal',
+  evolucion: 'Nota de evolución',
+  familiar: 'Nota de sesión familiar',
+  narracion: 'Narrativa semanal',
+  ecosistema: 'Inteligencia funcional',
+  apoyo_decisiones: 'Apoyo a decisiones',
+  analisis: 'Gestión de modelos',
+  simulador: 'Arquitectura y artefactos',
+  trazabilidad: 'Auditoría',
+  usuarios: 'Usuarios y permisos',
+  ciberseguridad: 'Configuración y seguridad',
+  drive: 'Almacenamiento en Drive',
+  sql: 'Mantenimiento SQL',
+  blindado: 'Capa blindada modelo',
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate, roleConfig }) => {
   const groups: NavGroup[] = [
     {
-      title: 'TRABAJO CLÍNICO',
+      title: 'A. TRABAJO CLÍNICO',
       items: [
         {
           id: 'inicio',
@@ -74,39 +96,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate, rol
         },
         {
           id: 'pacientes',
-          label: 'Padrón y Pacientes',
+          label: 'Padrón y expedientes',
           icon: <Users className="w-4 h-4" />,
-          badge: 'Gobernanza',
-        },
-      ],
-    },
-    {
-      title: 'CAPTURA CLÍNICA',
-      items: [
-        {
-          id: 'centro_psicometrico',
-          label: 'Centro Psicométrico',
-          icon: <ClipboardCheck className="w-4 h-4" />,
-          badge: 'Digital',
-          badgeColor: 'ok',
         },
         {
           id: 'entrevista',
           label: 'Entrevista exploratoria',
           icon: <FileSpreadsheet className="w-4 h-4" />,
-          badge: '14 módulos',
         },
         {
-          id: 'eval_inicial',
-          label: 'Evaluación inicial (Resumen)',
-          icon: <Activity className="w-4 h-4" />,
-          badge: 'Compat.',
-          badgeColor: 'ok',
-        },
-        {
-          id: 'seguimiento',
-          label: 'Seguimiento quincenal',
-          icon: <CalendarCheck2 className="w-4 h-4" />,
+          id: 'centro_psicometrico',
+          label: 'Centro psicométrico',
+          icon: <ClipboardCheck className="w-4 h-4" />,
         },
         {
           id: 'evolucion',
@@ -120,107 +121,108 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate, rol
         },
         {
           id: 'narracion',
-          label: 'Narración semanal V1.0',
+          label: 'Narrativa semanal',
           icon: <BookOpen className="w-4 h-4" />,
-          badge: '8 preg.',
         },
       ],
     },
     {
-      title: 'ANÁLISIS Y MODELOS',
+      title: 'B. SEGUIMIENTO Y ANÁLISIS',
       items: [
         {
+          id: 'seguimiento',
+          label: 'Seguimiento longitudinal',
+          icon: <CalendarCheck2 className="w-4 h-4" />,
+        },
+        {
           id: 'ecosistema',
-          label: 'Ecosistema de Inteligencia',
+          label: 'Inteligencia funcional',
           icon: <BrainCircuit className="w-4 h-4" />,
-          badge: '5 Motores',
-          badgeColor: 'ok',
+        },
+        {
+          id: 'apoyo_decisiones',
+          label: 'Apoyo a decisiones',
+          icon: <Scale className="w-4 h-4" />,
+        },
+      ],
+    },
+    {
+      title: 'C. ADMINISTRACIÓN Y GOBERNANZA',
+      requiresAdminGroup: true,
+      items: [
+        {
+          id: 'analisis',
+          label: 'Gestión de modelos',
+          icon: <Layers className="w-4 h-4" />,
+          requiresAdmin: true,
         },
         {
           id: 'simulador',
-          label: 'Simulador Autoencoder',
+          label: 'Arquitectura y artefactos',
           icon: <Cpu className="w-4 h-4" />,
-          badge: 'Sintético',
-          badgeColor: 'warn',
-        },
-        {
-          id: 'analisis',
-          label: 'Arquitectura y Pesos',
-          icon: <Layers className="w-4 h-4" />,
-          badge: 'Teórico',
+          requiresAdmin: true,
         },
         {
           id: 'trazabilidad',
-          label: 'Trazabilidad y Bitácora',
+          label: 'Auditoría',
           icon: <History className="w-4 h-4" />,
-          badge: 'Audit',
+          requiresAdmin: true,
+        },
+        {
+          id: 'usuarios',
+          label: 'Usuarios y permisos',
+          icon: <UserCheck className="w-4 h-4" />,
+          requiresAdmin: true,
+        },
+        {
+          id: 'ciberseguridad',
+          label: 'Configuración y seguridad',
+          icon: <ShieldCheck className="w-4 h-4" />,
+          requiresAdmin: true,
         },
         {
           id: 'drive',
-          label: 'Google Drive Sync',
+          label: 'Almacenamiento en Drive',
           icon: <Cloud className="w-4 h-4" />,
-          badge: 'Cloud',
-          badgeColor: 'ok',
+          requiresAdmin: true,
+          requiresDrive: true,
         },
-      ],
-    },
-    {
-      title: 'CIBERSEGURIDAD Y NORMATIVA',
-      items: [
         {
-          id: 'ciberseguridad',
-          label: 'Ciberseguridad y NOMs',
-          icon: <ShieldCheck className="w-4 h-4 text-[var(--normal)]" />,
-          badge: 'NOM-024',
-          badgeColor: 'ok',
+          id: 'sql',
+          label: 'Mantenimiento SQL',
+          icon: <Database className="w-4 h-4" />,
+          requiresAdmin: true,
         },
         {
           id: 'blindado',
           label: 'Capa blindada modelo',
           icon: <ShieldAlert className="w-4 h-4 text-[var(--riesgo)]" />,
-          badge: 'Superadmin',
-          badgeColor: 'warn',
           requiresBlindLayer: true,
-        },
-      ],
-    },
-    {
-      title: 'ADMINISTRACIÓN Y GOBERNANZA',
-      items: [
-        {
-          id: 'usuarios',
-          label: 'Modo Admin · Usuarios',
-          icon: <UserCheck className="w-4 h-4" />,
-          badge: 'PBKDF2',
-          badgeColor: 'ok',
-        },
-        {
-          id: 'sql',
-          label: 'Esquemas y Scripts SQL',
-          icon: <Database className="w-4 h-4" />,
-          badge: 'DDL',
         },
       ],
     },
   ];
 
   return (
-    <aside className="w-58 shrink-0 bg-[var(--panel)] border-r border-[var(--sep-claro)] flex flex-col h-full overflow-y-auto">
-      <nav className="p-2 space-y-4">
+    <aside className="w-58 shrink-0 bg-[var(--panel)] border-r border-[var(--sep)] flex flex-col h-full overflow-y-auto select-none">
+      <nav className="p-2.5 space-y-5">
         {groups.map((group, gIdx) => {
-          // Filter items based on role
+          if (group.requiresAdminGroup && !roleConfig.administra && !roleConfig.capa_blindada) {
+            return null;
+          }
+
           const visibleItems = group.items.filter((item) => {
-            if (item.requiresBlindLayer && !roleConfig.capa_blindada) {
-              return false;
-            }
+            if (item.requiresAdmin && !roleConfig.administra) return false;
+            if (item.requiresBlindLayer && !roleConfig.capa_blindada) return false;
+            if (item.requiresDrive && !roleConfig.exportar_drive) return false;
             return true;
           });
 
           if (visibleItems.length === 0) return null;
 
           return (
-            <div key={gIdx} className="space-y-1">
-              <div className="px-3 py-1 text-[10px] font-semibold tracking-wider text-[var(--texto-tenue)] uppercase">
+            <div key={gIdx} className="space-y-0.5">
+              <div className="px-2.5 pb-1 text-[10.5px] font-semibold tracking-wider text-[var(--texto-tenue)] uppercase">
                 {group.title}
               </div>
               {visibleItems.map((item) => {
@@ -228,34 +230,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate, rol
                 return (
                   <button
                     key={item.id}
+                    type="button"
                     onClick={() => onNavigate(item.id)}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-xs rounded-[var(--r)] text-left transition-colors cursor-pointer ${
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] rounded-[var(--r)] text-left transition-colors cursor-pointer border-l-2 ${
                       isActive
-                        ? 'bg-[var(--captura)] text-[var(--texto)] font-medium border-l-3 border-[var(--accion)]'
-                        : 'text-[var(--texto-sec)] hover:bg-[var(--captura)] hover:text-[var(--texto)]'
+                        ? 'bg-[var(--captura)] text-[var(--texto)] font-semibold border-[var(--accion)]'
+                        : 'border-transparent text-[var(--texto-sec)] hover:bg-[var(--panel-elev)] hover:text-[var(--texto)]'
                     }`}
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <span className={isActive ? 'text-[var(--accion)]' : 'text-[var(--texto-tenue)]'}>
-                        {item.icon}
-                      </span>
-                      <span className="truncate">{item.label}</span>
-                    </div>
-                    {item.badge && (
-                      <span
-                        className={`text-[9.5px] font-mono px-1.5 py-0.2 rounded border ${
-                          item.badgeColor === 'ok'
-                            ? 'text-[var(--normal)] border-[var(--normal)]/40 bg-[var(--normal)]/10'
-                            : item.badgeColor === 'risk'
-                            ? 'text-[var(--riesgo)] border-[var(--riesgo)]/40 bg-[var(--riesgo)]/10'
-                            : item.badgeColor === 'warn'
-                            ? 'text-[var(--advertencia)] border-[var(--advertencia)]/40 bg-[var(--advertencia)]/10'
-                            : 'text-[var(--texto-tenue)] border-[var(--borde)]/40'
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
+                    <span className={isActive ? 'text-[var(--accion)] shrink-0' : 'text-[var(--texto-tenue)] shrink-0'}>
+                      {item.icon}
+                    </span>
+                    <span className="truncate">{item.label}</span>
                   </button>
                 );
               })}

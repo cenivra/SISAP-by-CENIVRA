@@ -170,3 +170,45 @@ test('FE-05: Telemetría desactivada por defecto y sanitización elimina PHI, TU
   assert.ok(!cleaned.includes('craving'));
   assert.ok(cleaned.includes('[REDACTED_CLINICAL]'));
 });
+
+test('FE-06: Catálogo clínico de evaluación y headers RBAC en PatientApiService operan correctamente', async () => {
+  if (typeof (globalThis as { localStorage?: unknown }).localStorage === 'undefined') {
+    const store = new Map<string, string>();
+    (globalThis as { localStorage?: Storage }).localStorage = {
+      get length() {
+        return store.size;
+      },
+      clear: () => store.clear(),
+      getItem: (k: string) => store.get(k) ?? null,
+      key: (i: number) => Array.from(store.keys())[i] ?? null,
+      removeItem: (k: string) => {
+        store.delete(k);
+      },
+      setItem: (k: string, v: string) => {
+        store.set(k, String(v));
+      },
+    } as Storage;
+  }
+
+  const { INSTRUMENTOS_CATALOGO } = await import('../constants/clinicalConstants.ts');
+  const { PatientApiService } = await import('../services/patientApiService.ts');
+  const { StorageService } = await import('../services/storageService.ts');
+
+  const staxiEntry = INSTRUMENTOS_CATALOGO.find((s) => s.id === 'STAXI_2');
+  assert.ok(staxiEntry, 'STAXI_2 debe existir en INSTRUMENTOS_CATALOGO');
+  assert.equal(staxiEntry.items, 49);
+
+  PatientApiService.setSessionActor('psicologo', 'psicologo');
+  const headers = PatientApiService.getActorHeaders();
+  assert.equal(headers['X-SISAP-Actor'], 'psicologo');
+  assert.equal(headers['X-SISAP-Role'], 'psicologo');
+
+  PatientApiService.setApiBase('http://127.0.0.1:8091/api/');
+  assert.equal(PatientApiService.getApiBase(), 'http://127.0.0.1:8091/api');
+  PatientApiService.setApiBase('/api');
+
+  StorageService.setAppMode('institutional');
+  assert.equal(StorageService.getAppMode(), 'institutional');
+  StorageService.setAppMode('demo');
+  assert.equal(StorageService.getAppMode(), 'demo');
+});

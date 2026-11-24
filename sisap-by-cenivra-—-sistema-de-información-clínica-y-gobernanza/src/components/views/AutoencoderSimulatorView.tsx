@@ -272,18 +272,18 @@ Sello Institucional / SensorLab / Centro de Investigación`;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      {/* 1. MANDATORY PERMANENT WARNING BANNER */}
-      <div className="bg-amber-950/40 border-2 border-amber-500/80 text-amber-200 p-4 rounded-md shadow-md flex items-start gap-3.5">
-        <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+      {/* 1. MANDATORY PERMANENT WARNING BANNER (Workbench technical styling) */}
+      <div className="wb-surface border-l-4 border-l-[var(--advertencia)] p-3.5 flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-[var(--advertencia)] shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <div className="font-bold text-sm tracking-wide uppercase text-amber-300 flex items-center gap-2">
+          <div className="font-bold text-xs tracking-wide uppercase text-[var(--advertencia)] flex flex-wrap items-center gap-2">
             <span>MODO DEMOSTRACIÓN. Datos sintéticos. No ejecuta el autoencoder canónico ni genera resultados clínicos</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/30 text-amber-300">
+            <span className="est-warn">
               SIMULADOR EDUCATIVO
             </span>
           </div>
-          <p className="text-xs text-amber-200/90 leading-relaxed">
-            Este simulador tiene fines exclusivamente metodológicos y didácticos para evaluación técnica en SensorLab, comités de bioética y evaluadores de software. Los datos procesados corresponden a <b>arquetipos sintéticos precomputados</b>. Los modelos canónicos de deep learning (pesos entrenados en formato <code>.h5</code> / <code>.onnx</code> sobre cohortes clínicas de CENIVRA) se encuentran <b>estrictamente desacoplados, desactivados y excluidos de este repositorio público</b> para salvaguardar la privacidad de los pacientes y la integridad de la investigación.
+          <p className="text-xs text-[var(--texto-sec)] leading-relaxed">
+            Este simulador tiene fines exclusivamente metodológicos y didácticos para exploración topológica en laboratorio. Los datos procesados corresponden a <b className="text-[var(--texto)]">arquetipos sintéticos precomputados</b> y no constituyen inferencia clínica gobernada. Los checkpoints de producción se ejecutan exclusivamente mediante el backend auditado en «Ecosistema de Inteligencia».
           </p>
         </div>
       </div>

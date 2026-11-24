@@ -47,6 +47,7 @@ const STORAGE_KEYS = {
   SOLICITUDES_ARCO: 'sisap_v1_solicitudes_arco',
   VAULT_TOKENS: 'sisap_v1_vault_tokens',
   CONFIG_CIBERSEGURIDAD: 'sisap_v1_config_ciber',
+  APP_MODE: 'sisap_v1_app_mode',
 };
 
 // Initial Seed Data for CENIVRA Clinic
@@ -1083,6 +1084,30 @@ export const StorageService = {
     tls13Enforced: boolean;
   }) {
     localStorage.setItem(STORAGE_KEYS.CONFIG_CIBERSEGURIDAD, JSON.stringify(cfg));
+  },
+
+  getAppMode(): 'demo' | 'institutional' {
+    try {
+      const distEnv = (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_SISAP_DISTRIBUTION;
+      if (distEnv === 'institutional') return 'institutional';
+    } catch {
+      /* noop */
+    }
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.APP_MODE);
+      if (saved === 'institutional' || saved === 'demo') return saved;
+    } catch {
+      /* noop */
+    }
+    return 'demo';
+  },
+
+  setAppMode(mode: 'demo' | 'institutional'): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.APP_MODE, mode);
+    } catch {
+      /* noop */
+    }
   },
 
   // 5. Regla de Retención de 5 Años (NOM-004-SSA3-2012)

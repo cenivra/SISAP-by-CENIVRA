@@ -408,5 +408,52 @@ export interface LongitudinalInstrumentSummary {
   }>;
 }
 
+export interface SisapDesktopBackendInfo {
+  host: string;
+  port: number;
+  apiBase: string;
+  userDbDir: string;
+  dbFilePath: string;
+  backupDir: string;
+  logFile: string;
+  version: string;
+  isPackaged: boolean;
+}
+
+export interface SisapDesktopBackupEntry {
+  fileName: string;
+  sizeBytes: number;
+  modifiedAt: string;
+}
+
+export interface SisapDesktopBridge {
+  isDesktop: boolean;
+  platform: string;
+  apiBase: string;
+  openExternal: (url: string) => Promise<boolean>;
+  getBackendInfo: () => Promise<SisapDesktopBackendInfo>;
+  createDbBackup: () => Promise<{
+    ok: boolean;
+    fileName: string;
+    path: string;
+    sizeBytes: number;
+    createdAt: string;
+  }>;
+  listDbBackups: () => Promise<SisapDesktopBackupEntry[]>;
+  openDataDir: (target?: 'db' | 'backups' | 'logs') => Promise<{
+    ok: boolean;
+    path: string;
+    error: string | null;
+  }>;
+  readDesktopLog: () => Promise<string>;
+  closeApp: () => void;
+}
+
+declare global {
+  interface Window {
+    sisapDesktop?: SisapDesktopBridge;
+  }
+}
+
 
 

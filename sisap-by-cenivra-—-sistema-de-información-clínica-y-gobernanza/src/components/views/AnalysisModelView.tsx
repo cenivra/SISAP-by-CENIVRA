@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RoleConfig, UserAccount } from '../../types/clinical';
 import {
   Cpu,
@@ -20,6 +20,7 @@ import {
   FileText,
   Activity,
   Check,
+  Lock,
 } from 'lucide-react';
 import {
   AutoencoderEngine,
@@ -42,14 +43,80 @@ import {
 } from '../../services/scalesEngine';
 import { LatentRadarChart } from '../LatentRadarChart';
 import { StorageService } from '../../services/storageService';
+import {
+  PatientApiService,
+  ModelGovernanceRegistryPayload,
+} from '../../services/patientApiService';
 
 interface AnalysisModelViewProps {
   currentUser: UserAccount;
   roleConfig: RoleConfig;
+  onGovernanceUpdated?: (activeModelId: string) => void;
 }
 
-export const AnalysisModelView: React.FC<AnalysisModelViewProps> = ({ currentUser, roleConfig }) => {
-  const [activeTab, setActiveTab] = useState<'estado' | 'pesos' | 'sandbox' | 'longitudinal'>('pesos');
+export const AnalysisModelView: React.FC<AnalysisModelViewProps> = ({
+  currentUser,
+  roleConfig,
+  onGovernanceUpdated,
+}) => {
+  const [activeTab, setActiveTab] = useState<'gobernanza' | 'estado' | 'pesos' | 'sandbox' | 'longitudinal'>('gobernanza');
+
+  // Gobernanza central de modelos (SQLite model_governance_registry)
+  const [governanceData, setGovernanceData] = useState<ModelGovernanceRegistryPayload | null>(null);
+  const [governanceLoading, setGovernanceLoading] = useState<boolean>(false);
+  const [governanceError, setGovernanceError] = useState<string | null>(null);
+  const [governanceSuccess, setGovernanceSuccess] = useState<string | null>(null);
+  const [activationJustification, setActivationJustification] = useState<string>('');
+  const [activatingModelId, setActivatingModelId] = useState<string | null>(null);
+
+  const loadGovernance = async () => {
+    setGovernanceLoading(true);
+    setGovernanceError(null);
+    try {
+      const gov = await PatientApiService.getAutoencoderGovernance();
+      setGovernanceData(gov);
+      if (gov.active_model_id && onGovernanceUpdated) {
+        onGovernanceUpdated(gov.active_model_id);
+      }
+    } catch (err: unknown) {
+      setGovernanceError(
+        err instanceof Error ? err.message : 'Backend SQLite no disponible para consultar gobernanza.'
+      );
+    } finally {
+      setGovernanceLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadGovernance();
+  }, []);
+
+  const handleActivateModel = async (modelId: string) => {
+    if (!roleConfig.administra) {
+      setGovernanceError(
+        'Acceso denegado: solo Superadministración o Administración pueden cambiar el modelo clínico activo.'
+      );
+      return;
+    }
+    setActivatingModelId(modelId);
+    setGovernanceError(null);
+    setGovernanceSuccess(null);
+    try {
+      const res = await PatientApiService.setActiveGovernanceModel(
+        modelId,
+        activationJustification.trim() || `Activación administrativa desde Arquitectura y Pesos (${currentUser.u})`
+      );
+      setGovernanceSuccess(
+        `Modelo autorizado actualizado a ${res.active_model_id || modelId}. Toda inferencia clínica automática ejecutará esta versión.`
+      );
+      setActivationJustification('');
+      await loadGovernance();
+    } catch (err: unknown) {
+      setGovernanceError(err instanceof Error ? err.message : 'No fue posible actualizar el modelo activo.');
+    } finally {
+      setActivatingModelId(null);
+    }
+  };
 
   // Weights management state
   const [currentWeights, setCurrentWeights] = useState<number[][]>(AutoencoderEngine.getActiveWeights());
@@ -59,12 +126,12 @@ export const AnalysisModelView: React.FC<AnalysisModelViewProps> = ({ currentUse
   const [weightsError, setWeightsError] = useState<string | null>(null);
   const [weightsSuccess, setWeightsSuccess] = useState<string | null>(null);
 
-  // Sandbox state
+  // Sandbox state (STAXI-2 usa 49 reactivos reales)
   const [sandboxBis, setSandboxBis] = useState<string>('3 2 4 3 2 1 4 2 3 4 3 2 4 3 2 3 4 2 3 2 4 3 2 4 3 2 3 4 2 3');
   const [sandboxBsl, setSandboxBsl] = useState<string>('2 3 1 2 4 3 2 1 2 3 4 2 1 3 2 2 3 4 1 2 3 2 1');
   const [sandboxGad, setSandboxGad] = useState<string>('2 3 2 3 1 2 2');
   const [sandboxStaxi, setSandboxStaxi] = useState<string>(
-    Array(44).fill(0).map((_, i) => (i % 3) + 1).join(' ')
+    Array(49).fill(0).map((_, i) => (i % 3) + 1).join(' ')
   );
   const [sandboxBads, setSandboxBads] = useState<string>(
     Array(25).fill(0).map((_, i) => ((i * 2) % 6) + 1).join(' ')
@@ -82,7 +149,7 @@ export const AnalysisModelView: React.FC<AnalysisModelViewProps> = ({ currentUse
   const bisCalculated = computeBis11(parseRawNumbers(sandboxBis, 30, 2));
   const bslCalculated = computeBsl23(parseRawNumbers(sandboxBsl, 23, 1));
   const gadCalculated = computeGad7(parseRawNumbers(sandboxGad, 7, 1));
-  const staxiCalculated = computeStaxi2(parseRawNumbers(sandboxStaxi, 44, 2));
+  const staxiCalculated = computeStaxi2(parseRawNumbers(sandboxStaxi, 49, 2));
   const badsCalculated = computeBads(parseRawNumbers(sandboxBads, 25, 3));
   const erosTotal = computeEros(parseRawNumbers(sandboxEros, 10, 4));
 
@@ -224,15 +291,15 @@ class CENIVRATransversalAutoencoder(nn.Module):
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Permanent Warning Banner for Public Repository */}
-      <div className="bg-amber-950/40 border-2 border-amber-500/80 text-amber-200 p-4 rounded-md shadow-md flex items-start gap-3.5">
-        <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+      {/* Permanent Warning Banner for Sandbox / Theoretical Architecture */}
+      <div className="wb-surface border-l-4 border-l-[var(--advertencia)] p-3.5 flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-[var(--advertencia)] shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <div className="font-bold text-sm tracking-wide uppercase text-amber-300 flex items-center gap-2">
-            <span>MODO DEMOSTRACIÓN. Datos sintéticos. No ejecuta el autoencoder canónico ni genera resultados clínicos</span>
+          <div className="font-bold text-xs tracking-wide uppercase text-[var(--advertencia)] flex flex-wrap items-center gap-2">
+            <span>Entorno de Gobernanza, Matriz Teórica y Sandbox Técnico</span>
           </div>
-          <p className="text-xs text-amber-200/90 leading-relaxed">
-            Esta vista permite auditar la arquitectura teórica y manipular matrices en modo sandbox de investigación técnica. Los pesos canónicos de deep learning entrenados sobre cohortes clínicas reales no forman parte de esta distribución pública.
+          <p className="text-xs text-[var(--texto-sec)] leading-relaxed">
+            La pestaña <b>Gobernanza y Registro Central</b> administra el modelo clínico autorizado en SQLite (exclusivo para Administración). Las pestañas <b>Matriz de Pesos (24 × 12)</b> y <b>Sandbox</b> operan con datos de laboratorio sin afectar los expedientes clínicos.
           </p>
         </div>
       </div>
@@ -274,7 +341,19 @@ class CENIVRATransversalAutoencoder(nn.Module):
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-[var(--sep-claro)] pb-2 text-xs overflow-x-auto">
+      <div className="flex flex-wrap gap-1.5 border-b border-[var(--sep-claro)] pb-2 text-xs">
+        <button
+          onClick={() => setActiveTab('gobernanza')}
+          className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'gobernanza'
+              ? 'bg-[var(--captura)] text-[var(--accion)] font-bold border-b-2 border-[var(--accion)]'
+              : 'text-[var(--texto-sec)] hover:bg-[var(--panel)]'
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>Gobernanza y Registro Central de Modelos</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('pesos')}
           className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
@@ -326,9 +405,210 @@ class CENIVRATransversalAutoencoder(nn.Module):
         </button>
       </div>
 
+      {/* TAB 0: GOBERNANZA Y REGISTRO CENTRAL DE MODELOS */}
+      {activeTab === 'gobernanza' && (
+        <div className="space-y-4">
+          <div className="wb-surface p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--sep)]">
+              <div>
+                <div className="wb-eyebrow">Registro Persistente en SQLite · model_governance_registry</div>
+                <h3 className="text-sm font-bold text-[var(--texto)]">
+                  Gobernanza de Versiones del Autoencoder y Control de Acceso (RBAC)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {governanceData?.active_model_id && (
+                  <span className="est-ok font-mono">
+                    Activo: {governanceData.active_model_id}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={loadGovernance}
+                  disabled={governanceLoading}
+                  className="sisap-btn-sec text-xs py-1 px-2.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${governanceLoading ? 'animate-spin' : ''}`} />
+                  <span>Actualizar</span>
+                </button>
+              </div>
+            </div>
+
+            {!roleConfig.administra && (
+              <div className="p-2.5 rounded bg-[var(--campo)] border border-[var(--sep-claro)] text-xs text-[var(--texto-sec)] flex items-center gap-2">
+                <Lock className="w-4 h-4 text-[var(--advertencia)] shrink-0" />
+                <span>
+                  Vista de solo lectura para rol <b>{currentUser.rol}</b>. La activación o sustitución de modelos está reservada a Superadministración / Administración del Centro.
+                </span>
+              </div>
+            )}
+
+            {governanceError && (
+              <div className="p-2.5 rounded bg-[var(--riesgo)]/10 border border-[var(--riesgo)]/40 text-xs text-[var(--riesgo)]">
+                {governanceError}
+              </div>
+            )}
+
+            {governanceSuccess && (
+              <div className="p-2.5 rounded bg-[var(--normal)]/10 border border-[var(--normal)]/40 text-xs text-[var(--normal)]">
+                {governanceSuccess}
+              </div>
+            )}
+
+            {roleConfig.administra && (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <input
+                  type="text"
+                  value={activationJustification}
+                  onChange={(e) => setActivationJustification(e.target.value)}
+                  placeholder="Justificación técnica / regulatoria para cambio de modelo activo..."
+                  className="sisap-input flex-1 min-w-[240px]"
+                />
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse tabular-nums">
+                <thead>
+                  <tr className="border-b border-[var(--sep-claro)] text-[var(--texto-tenue)] font-mono text-[10.5px] uppercase">
+                    <th className="py-2 px-2.5">Modelo</th>
+                    <th className="py-2 px-2.5">Arquitectura</th>
+                    <th className="py-2 px-2.5">Estado Gobernanza</th>
+                    <th className="py-2 px-2.5">Integridad SHA-256</th>
+                    <th className="py-2 px-2.5">Uso Clínico</th>
+                    <th className="py-2 px-2.5 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--sep)]">
+                  {(governanceData?.models || []).map((entry) => {
+                    const isActive = entry.governance_state === 'ACTIVE_DEFAULT';
+                    const integrityOk = Boolean(entry.disk_integrity?.ok ?? entry.disk_integrity?.verified);
+                    const canPromote =
+                      roleConfig.administra &&
+                      !isActive &&
+                      entry.clinical_use_allowed &&
+                      integrityOk;
+                    return (
+                      <tr key={entry.model_id} className={isActive ? 'bg-[var(--captura)]' : 'hover:bg-[var(--panel-elev)]'}>
+                        <td className="py-2 px-2.5">
+                          <div className="font-mono font-bold text-[var(--accion)]">{entry.model_id}</div>
+                          <div className="text-[11px] text-[var(--texto-sec)]">{entry.display_name}</div>
+                        </td>
+                        <td className="py-2 px-2.5 font-mono text-[11px]">
+                          <div className="font-semibold text-[var(--texto)]">
+                            {entry.input_variables_count}→{entry.latent_dim}D
+                          </div>
+                          <div className="text-[10px] text-[var(--texto-tenue)] truncate max-w-[230px]" title={entry.architecture_spec}>
+                            {entry.architecture_spec}
+                          </div>
+                        </td>
+                        <td className="py-2 px-2.5">
+                          <span
+                            className={
+                              isActive
+                                ? 'est-ok'
+                                : entry.governance_state === 'VALIDATED_ELIGIBLE'
+                                ? 'est-warn'
+                                : 'est-pend'
+                            }
+                          >
+                            {entry.governance_state}
+                          </span>
+                        </td>
+                        <td className="py-2 px-2.5 font-mono text-[10.5px]">
+                          {integrityOk ? (
+                            <span className="text-[var(--normal)]" title={entry.artifact_sha256 || ''}>
+                              ✓ {(entry.disk_integrity?.observedSha256 || entry.artifact_sha256 || '').slice(0, 14)}…
+                            </span>
+                          ) : (
+                            <span className="text-[var(--texto-tenue)]">
+                              {entry.disk_integrity?.reason || 'Sin artefacto clínico'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-2.5 font-mono">
+                          {entry.clinical_use_allowed ? (
+                            <span className="text-[var(--normal)]">Autorizado</span>
+                          ) : (
+                            <span className="text-[var(--riesgo)]">Bloqueado</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-2.5 text-right">
+                          {isActive ? (
+                            <span className="est-ok">Predeterminado</span>
+                          ) : canPromote ? (
+                            <button
+                              type="button"
+                              disabled={activatingModelId === entry.model_id}
+                              onClick={() => handleActivateModel(entry.model_id)}
+                              className="sisap-btn py-1 px-2 text-[11px]"
+                            >
+                              {activatingModelId === entry.model_id ? 'Aplicando...' : 'Activar'}
+                            </button>
+                          ) : (
+                            <span className="text-[10.5px] font-mono text-[var(--texto-tenue)]">No elegible / Bloq.</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Auditoría Reciente de model_runs (8 campos obligatorios) */}
+          <div className="wb-surface p-4 space-y-2">
+            <div className="wb-eyebrow">Auditoría de Inferencias Recientes (SQLite model_runs · 8 Campos Trazables)</div>
+            <div className="overflow-x-auto max-h-64">
+              <table className="w-full text-[11px] font-mono text-left border-collapse tabular-nums">
+                <thead>
+                  <tr className="border-b border-[var(--sep-claro)] text-[var(--texto-tenue)]">
+                    <th className="py-1.5 px-2">Fecha</th>
+                    <th className="py-1.5 px-2">Expediente</th>
+                    <th className="py-1.5 px-2">Modelo</th>
+                    <th className="py-1.5 px-2">Preproc / Schema</th>
+                    <th className="py-1.5 px-2">SHA-256</th>
+                    <th className="py-1.5 px-2">Actor</th>
+                    <th className="py-1.5 px-2">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--sep)]">
+                  {(governanceData?.recent_runs || []).slice(0, 10).map((run) => (
+                    <tr key={run.run_id} className="hover:bg-[var(--panel-elev)]">
+                      <td className="py-1.5 px-2">{(run.executed_at || '').slice(0, 16).replace('T', ' ')}</td>
+                      <td className="py-1.5 px-2 text-[var(--accion)]">{run.patient_pseudonym || run.patient_or_evaluation_id || '—'}</td>
+                      <td className="py-1.5 px-2">{run.model_id}</td>
+                      <td className="py-1.5 px-2">{run.preprocessing_version} / {run.input_schema_version}</td>
+                      <td className="py-1.5 px-2">{run.artifact_sha256 ? `${run.artifact_sha256.slice(0, 12)}…` : '—'}</td>
+                      <td className="py-1.5 px-2">{run.executed_by} ({run.actor_role})</td>
+                      <td className="py-1.5 px-2">
+                        <span className={run.execution_status === 'completed' ? 'est-ok' : 'est-warn'}>
+                          {run.execution_status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!governanceData?.recent_runs || governanceData.recent_runs.length === 0) && (
+                    <tr>
+                      <td colSpan={7} className="py-3 text-center text-[var(--texto-tenue)]">
+                        Sin corridas persistidas en model_runs todavía.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TAB 1: MATRIZ DE PESOS */}
       {activeTab === 'pesos' && (
         <div className="space-y-5">
+          <div className="p-3 rounded bg-[var(--campo)] border border-[var(--info)]/40 text-xs text-[var(--texto-sec)]">
+            <b className="text-[var(--info)]">Aclaración Técnica:</b> La tabla <code>ENCODER_PROJECTION_WEIGHTS</code> (24×12) es una proyección lineal informativa/exploratoria para inspección estructural. Toda inferencia clínica real en el Ecosistema de Inteligencia ejecuta las <b>5 capas neuronales SELU</b> verificadas criptográficamente por SHA-256.
+          </div>
           {/* Status card */}
           <div className="p-4 rounded bg-[var(--campo)] border border-[var(--borde)]/30 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="space-y-1">
@@ -464,7 +744,7 @@ class CENIVRATransversalAutoencoder(nn.Module):
                   setSandboxBis('1 2 1 2 1 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1');
                   setSandboxBsl('0 1 0 1 0 1 0 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 0');
                   setSandboxGad('1 0 1 1 0 1 0');
-                  setSandboxStaxi(Array(44).fill(1).join(' '));
+                  setSandboxStaxi(Array(49).fill(1).join(' '));
                   setSandboxBads(Array(25).fill(4).join(' '));
                   setSandboxEros('6 6 5 6 5 6 6 5 6 5');
                   setSandboxEdad(30);
@@ -538,7 +818,7 @@ class CENIVRATransversalAutoencoder(nn.Module):
 
             <div className="sisap-captura space-y-2">
               <div className="flex justify-between font-bold">
-                <span>STAXI-2 (44 reactivos, 1-4)</span>
+                <span>STAXI-2 (49 reactivos, 1-4)</span>
                 <span className="text-[var(--accion)]">Estado: {staxiCalculated.state} / Rasgo: {staxiCalculated.trait}</span>
               </div>
               <textarea

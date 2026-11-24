@@ -152,11 +152,39 @@ test('AE-06: Servicio de backend y rutas persisten model_runs/model_outputs e in
   const persisted = executeAutoencoderInference(
     buildValidPayload({
       patient_id: created.patient.patient_id,
+      reference_id: 'EVAL-TEST-8FIELDS',
       persist: true,
-    })
+    }),
+    { actor: 'psicologo_demo', actorRole: 'psicologo' }
   );
   assert.equal(persisted.status, 'completed');
   assert.equal(persisted.persistence.persisted, true);
+  assert.equal(persisted.traceability.model_id, 'encoder_22_checkpoint_fase2');
+  assert.equal(persisted.traceability.model_version, '1.0.0-20260628-22v');
+  assert.equal(
+    persisted.traceability.artifact_sha256,
+    '313dcd2d8f7c136222eaff1c56583b02af332c259ff0aee85b02f349b93c3d9e'
+  );
+  assert.equal(persisted.traceability.preprocessing_version, '1.0.0-MFR-REF-166');
+  assert.equal(persisted.traceability.input_schema_version, 'contrato_entrada_24v_v1.0.0');
+  assert.equal(persisted.traceability.execution_status, 'completed');
+
+  const runsRes = await route({
+    method: 'GET',
+    pathname: '/api/model-runs',
+    query: new URLSearchParams(),
+    body: null,
+  });
+  assert.equal(runsRes.status, 200);
+  const recorded = runsRes.body.runs.find((r) => r.run_id === persisted.persistence.run_id);
+  assert.ok(recorded, 'El run debe existir en model_runs');
+  assert.equal(recorded.model_id, 'encoder_22_checkpoint_fase2');
+  assert.equal(recorded.model_version, '1.0.0-20260628-22v');
+  assert.equal(recorded.artifact_sha256, persisted.traceability.artifact_sha256);
+  assert.equal(recorded.preprocessing_version, '1.0.0-MFR-REF-166');
+  assert.equal(recorded.input_schema_version, 'contrato_entrada_24v_v1.0.0');
+  assert.equal(recorded.executed_by, 'psicologo_demo');
+  assert.equal(recorded.actor_role, 'psicologo');
 
   const refRes = await route({
     method: 'GET',
@@ -166,6 +194,74 @@ test('AE-06: Servicio de backend y rutas persisten model_runs/model_outputs e in
   });
   assert.equal(refRes.status, 200);
   assert.equal(refRes.body.percentiles_12d.length, 12);
+
+  const chain = verifyChain();
+  assert.equal(chain.valid, true);
+});
+
+test('AE-07: Gobernanza central de modelos impide al rol clínico anular el modelo y bloquea activar experimentales', async () => {
+  const govRes = await route({
+    method: 'GET',
+    pathname: '/api/engines/autoencoder/governance',
+    query: new URLSearchParams(),
+    body: null,
+  });
+  assert.equal(govRes.status, 200);
+  assert.equal(govRes.body.active_model_id, 'encoder_22_checkpoint_fase2');
+  assert.ok(govRes.body.models.length >= 6);
+
+  // Rol clínico intentando usar encoder_24_deployed -> 403 FORBIDDEN
+  await assert.rejects(
+    async () => {
+      await route({
+        method: 'POST',
+        pathname: '/api/engines/autoencoder/infer',
+        query: new URLSearchParams(),
+        headers: { 'x-sisap-actor': 'psicologo', 'x-sisap-role': 'psicologo' },
+        body: buildValidPayload({ model_id: 'encoder_24_deployed' }),
+      });
+    },
+    (err) => err?.httpStatus === 403
+  );
+
+  // Rol clínico intentando cambiar el modelo activo -> 403 FORBIDDEN
+  await assert.rejects(
+    async () => {
+      await route({
+        method: 'POST',
+        pathname: '/api/engines/autoencoder/governance/active-model',
+        query: new URLSearchParams(),
+        headers: { 'x-sisap-actor': 'psicologo', 'x-sisap-role': 'psicologo' },
+        body: { model_id: 'encoder_22_checkpoint_fase2' },
+      });
+    },
+    (err) => err?.httpStatus === 403
+  );
+
+  // Rol admin intentando activar modelo experimental -> 400 BAD_REQUEST
+  await assert.rejects(
+    async () => {
+      await route({
+        method: 'POST',
+        pathname: '/api/engines/autoencoder/governance/active-model',
+        query: new URLSearchParams(),
+        headers: { 'x-sisap-actor': 'admin', 'x-sisap-role': 'admin' },
+        body: { model_id: 'encoder_24_deployed', justification: 'Prueba negativa' },
+      });
+    },
+    (err) => err?.httpStatus === 400
+  );
+
+  // Rol admin SÍ puede ejecutar comparación explícita y confirmar modelo activo
+  const adminOk = await route({
+    method: 'POST',
+    pathname: '/api/engines/autoencoder/governance/active-model',
+    query: new URLSearchParams(),
+    headers: { 'x-sisap-actor': 'admin', 'x-sisap-role': 'admin' },
+    body: { model_id: 'encoder_22_checkpoint_fase2', justification: 'Confirmación regulatoria' },
+  });
+  assert.equal(adminOk.status, 200);
+  assert.equal(adminOk.body.active_model_id, 'encoder_22_checkpoint_fase2');
 
   const chain = verifyChain();
   assert.equal(chain.valid, true);

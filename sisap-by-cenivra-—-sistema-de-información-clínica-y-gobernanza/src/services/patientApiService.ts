@@ -36,7 +36,7 @@ export interface EnginesStatusResponse {
 export interface AutoencoderInferencePayload {
   patient_id?: string;
   id_registro?: string;
-  model_id?: 'encoder_22_checkpoint_fase2' | 'encoder_24_deployed';
+  model_id?: string;
   modo_scoring?: 'excel_canonico' | 'manual_estandar';
   persist?: boolean;
   edad: number;
@@ -55,6 +55,71 @@ export interface AutoencoderInferencePayload {
     respuestas_conductuales: number[];
     general_score_0_1: number;
   };
+}
+
+export interface ModelGovernanceEntry {
+  model_id: string;
+  display_name: string;
+  model_version: string;
+  architecture_spec: string;
+  input_variables_count: number;
+  latent_dim: number;
+  governance_state:
+    | 'ACTIVE_DEFAULT'
+    | 'VALIDATED_ELIGIBLE'
+    | 'EXPERIMENTAL_RESTRICTED'
+    | 'HISTORICAL_LEGACY'
+    | 'INVALID_EXCLUDED';
+  clinical_use_allowed: boolean;
+  artifact_path: string | null;
+  artifact_sha256: string | null;
+  preprocessing_version: string | null;
+  input_schema_version: string | null;
+  validation_summary: string;
+  updated_at: string;
+  updated_by: string;
+  disk_integrity?: {
+    checkable?: boolean;
+    ok?: boolean;
+    verified?: boolean;
+    reason?: string;
+    observedSha256?: string | null;
+  };
+}
+
+export interface GovernedModelRunRecord {
+  run_id: string;
+  model_id: string;
+  model_version: string;
+  artifact_sha256: string | null;
+  preprocessing_version: string | null;
+  input_schema_version: string | null;
+  executed_at: string;
+  patient_or_evaluation_id: string | null;
+  patient_id: string | null;
+  patient_pseudonym: string | null;
+  execution_status: string;
+  executed_by: string | null;
+  actor_role: string | null;
+  input_hash: string | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
+export interface ModelGovernanceRegistryPayload {
+  registry_source: string;
+  active_model_id: string | null;
+  active_model: ModelGovernanceEntry | null;
+  models: ModelGovernanceEntry[];
+  recent_runs: GovernedModelRunRecord[];
+  governance_events: Array<{
+    event_id: string;
+    occurred_at: string;
+    actor: string;
+    actor_role: string;
+    action: string;
+    details: string;
+  }>;
 }
 
 export interface CreateFollowUpInput {
@@ -133,9 +198,15 @@ export interface ClinicalRecordPayload {
     run_id: string;
     engine: string;
     state: string;
+    model_id?: string | null;
     model_version: string;
+    artifact_sha256?: string | null;
     preprocessing_version: string;
+    input_schema_version?: string | null;
+    executed_by?: string | null;
+    actor_role?: string | null;
     started_at: string;
+    finished_at?: string | null;
   }>;
 }
 
@@ -153,12 +224,86 @@ export interface CreatePatientInput {
   allow_duplicate?: boolean;
 }
 
-const API_BASE =
-  typeof window !== 'undefined' && window.location.protocol === 'file:'
-    ? 'http://127.0.0.1:8080/api'
-    : '/api';
+const resolveDefaultApiBase = (): string => {
+  if (typeof window !== 'undefined') {
+    const desktopApiBase = (window as { sisapDesktop?: { apiBase?: string } }).sisapDesktop?.apiBase;
+    if (desktopApiBase && typeof desktopApiBase === 'string') {
+      return desktopApiBase;
+    }
+    if (window.location?.protocol === 'file:') {
+      return 'http://127.0.0.1:8080/api';
+    }
+  }
+  return '/api';
+};
+
+let API_BASE = resolveDefaultApiBase();
 
 export class PatientApiService {
+  private static sessionActor = '';
+  private static sessionRole = '';
+
+  static setApiBase(nextBase: string): void {
+    if (nextBase && typeof nextBase === 'string') {
+      API_BASE = nextBase.replace(/\/+$/, '');
+    }
+  }
+
+  static getApiBase(): string {
+    return API_BASE;
+  }
+
+  static setSessionActor(actor: string | null | undefined, role: string | null | undefined): void {
+    this.sessionActor = (actor || '').trim();
+    this.sessionRole = (role || '').trim();
+  }
+
+  static getActorHeaders(extra?: Record<string, string>): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(extra || {}),
+    };
+    if (this.sessionActor) headers['X-SISAP-Actor'] = this.sessionActor;
+    if (this.sessionRole) headers['X-SISAP-Role'] = this.sessionRole;
+    return headers;
+  }
+
+  static getReadHeaders(): Record<string, string> {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (this.sessionActor) headers['X-SISAP-Actor'] = this.sessionActor;
+    if (this.sessionRole) headers['X-SISAP-Role'] = this.sessionRole;
+    return headers;
+  }
+
+  static async syncDesktopApiBase(): Promise<string> {
+    if (typeof window === 'undefined') return API_BASE;
+    const desktop = (
+      window as {
+        sisapDesktop?: {
+          apiBase?: string;
+          getBackendInfo?: () => Promise<{ apiBase?: string; port?: number }>;
+        };
+      }
+    ).sisapDesktop;
+    if (desktop?.apiBase) {
+      this.setApiBase(desktop.apiBase);
+      return API_BASE;
+    }
+    if (desktop?.getBackendInfo) {
+      try {
+        const info = await desktop.getBackendInfo();
+        if (info?.apiBase) {
+          this.setApiBase(info.apiBase);
+        } else if (info?.port) {
+          this.setApiBase(`http://127.0.0.1:${info.port}/api`);
+        }
+      } catch {
+        // Keep resolved default if IPC backend info fails transiently
+      }
+    }
+    return API_BASE;
+  }
   /**
    * Comprueba la disponibilidad del backend local y la base SQLite.
    */
@@ -241,10 +386,7 @@ export class PatientApiService {
   ): Promise<{ patient: PatientSearchResult; recordId: string }> {
     const res = await fetch(`${API_BASE}/patients`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
+      headers: this.getActorHeaders(),
       body: JSON.stringify({ ...payload, allow_duplicate: allowDuplicate }),
     });
 
@@ -266,23 +408,50 @@ export class PatientApiService {
   }
 
   static async getEnginesStatus(): Promise<EnginesStatusResponse> {
-    const res = await fetch(`${API_BASE}/engines/status`, { headers: { Accept: 'application/json' } });
+    const res = await fetch(`${API_BASE}/engines/status`, { headers: this.getReadHeaders() });
     if (!res.ok) throw new Error(`Error al consultar motores (${res.status})`);
     return res.json();
   }
 
   static async getAutoencoderReference(): Promise<any> {
     const res = await fetch(`${API_BASE}/engines/autoencoder/reference`, {
-      headers: { Accept: 'application/json' },
+      headers: this.getReadHeaders(),
     });
     if (!res.ok) throw new Error(`Error al consultar referencia Autoencoder (${res.status})`);
     return res.json();
   }
 
+  static async getAutoencoderGovernance(): Promise<ModelGovernanceRegistryPayload> {
+    const res = await fetch(`${API_BASE}/engines/autoencoder/governance`, {
+      headers: this.getReadHeaders(),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || `Error al consultar gobernanza de modelos (${res.status})`);
+    }
+    return data;
+  }
+
+  static async setActiveGovernanceModel(modelId: string, justification: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/engines/autoencoder/governance/active-model`, {
+      method: 'POST',
+      headers: this.getActorHeaders(),
+      body: JSON.stringify({ model_id: modelId, justification }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(
+        data.message ||
+          `Error al actualizar modelo activo (${res.status}). Verifica permisos administrativos.`
+      );
+    }
+    return data;
+  }
+
   static async runAutoencoderInference(payload: AutoencoderInferencePayload): Promise<any> {
     const res = await fetch(`${API_BASE}/engines/autoencoder/infer`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: this.getActorHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
@@ -292,10 +461,23 @@ export class PatientApiService {
     return data;
   }
 
+  static async runCandidate17Comparison(payload: AutoencoderInferencePayload): Promise<any> {
+    const res = await fetch(`${API_BASE}/engines/autoencoder/candidate17/infer`, {
+      method: 'POST',
+      headers: this.getActorHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 422) {
+      throw new Error(data.message || `Error en comparativa 17D (${res.status})`);
+    }
+    return data;
+  }
+
   static async createFollowUp(input: CreateFollowUpInput): Promise<any> {
     const res = await fetch(`${API_BASE}/follow-ups`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: this.getActorHeaders(),
       body: JSON.stringify(input),
     });
     const data = await res.json().catch(() => ({}));
@@ -334,7 +516,7 @@ export class PatientApiService {
   ): Promise<any> {
     const res = await fetch(`${API_BASE}/patients/${encodeURIComponent(patientId)}/formulations`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: this.getActorHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
@@ -388,7 +570,7 @@ export class PatientApiService {
   }): Promise<any> {
     const res = await fetch(`${API_BASE}/psychometrics/evaluations`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: this.getActorHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
@@ -418,7 +600,7 @@ export class PatientApiService {
   static async recalculatePsychometricEvaluation(evalId: string, scoringMode?: string): Promise<any> {
     const res = await fetch(`${API_BASE}/psychometrics/evaluations/${encodeURIComponent(evalId)}/recalculate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: this.getActorHeaders(),
       body: JSON.stringify({ scoring_mode: scoringMode }),
     });
     const data = await res.json().catch(() => ({}));

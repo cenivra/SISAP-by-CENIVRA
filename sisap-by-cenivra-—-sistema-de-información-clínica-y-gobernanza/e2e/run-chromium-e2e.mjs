@@ -412,9 +412,9 @@ async function main() {
 
       await setInputValue(cdp, 'input[placeholder="000000"]', '123456', 0);
       await clickButtonByText(cdp, 'Validar MFA y Acceder');
-      await waitForText(cdp, 'Modo Admin · Usuarios');
+      await waitForText(cdp, 'Usuarios y permisos');
 
-      await clickButtonByText(cdp, 'Modo Admin · Usuarios');
+      await clickButtonByText(cdp, 'Usuarios y permisos');
       await waitForText(cdp, 'debe_cambiar_clave = 1');
 
       await clickButtonByText(cdp, 'Salir');
@@ -428,8 +428,8 @@ async function main() {
       await waitForText(cdp, 'Central de trabajo');
     });
 
-    await recordFlow('E2E-03', 'Padrón y Pacientes — alta sintética en SQLite y búsqueda parametrizada', async () => {
-      await clickButtonByText(cdp, 'Padrón y Pacientes');
+    await recordFlow('E2E-03', 'Padrón y expedientes — alta sintética en SQLite y búsqueda parametrizada', async () => {
+      await clickButtonByText(cdp, 'Padrón y expedientes');
       await waitForText(cdp, 'Registrar Paciente');
       await sleep(300); // espera checkHealth asíncrono de la vista
 
@@ -457,8 +457,8 @@ async function main() {
       await waitForText(cdp, syntheticPseudonym);
     });
 
-    await recordFlow('E2E-04', 'Catálogo Centro Psicométrico (6 activos) y exclusión OCI-R', async () => {
-      await clickButtonByText(cdp, 'Centro Psicométrico');
+    await recordFlow('E2E-04', 'Catálogo Centro psicométrico (6 activos) y exclusión OCI-R', async () => {
+      await clickButtonByText(cdp, 'Centro psicométrico');
       await waitForText(cdp, 'Control de catálogo:');
       const check = await cdp.evaluate(`
         const txt = document.body?.innerText || '';
@@ -574,34 +574,81 @@ async function main() {
     await recordFlow('E2E-07', 'Navegación multivista clínica v1.0.0 -> v1.1.0 sin errores', async () => {
       for (const navLabel of [
         'Entrevista exploratoria',
-        'Evaluación inicial (Resumen)',
-        'Seguimiento quincenal',
+        'Centro psicométrico',
+        'Seguimiento longitudinal',
         'Nota de evolución',
         'Nota de sesión familiar',
-        'Narración semanal V1.0',
-        'Ciberseguridad y NOMs',
-        'Trazabilidad y Bitácora',
-        'Esquemas y Scripts SQL',
+        'Narrativa semanal',
+        'Inteligencia funcional',
+        'Apoyo a decisiones',
       ]) {
         await clickButtonByText(cdp, navLabel);
         await sleep(80);
         const len = await cdp.evaluate(`return (document.querySelector('main')?.innerText || '').length;`);
         assert.ok(len > 50, `Vista "${navLabel}" vacía`);
       }
+
+      // Verificar que Evaluación inicial fue unificada en Centro psicométrico y comprobar cortes + Gráficas Autoencoder 12D
+      await clickButtonByText(cdp, 'Centro psicométrico');
+      await waitForText(cdp, 'Gráficas Autoencoder 12D');
+      await clickButtonByText(cdp, 'Mitad de tratamiento:');
+      await clickButtonByText(cdp, 'Final:');
+      await clickButtonByText(cdp, 'Inicial:');
+      await clickButtonByText(cdp, 'Gráficas Autoencoder 12D');
+      await waitForText(cdp, 'Evaluación Intermedia (Mitad de tratamiento)');
+      await waitForText(cdp, 'Evaluación Final (Egreso / Cierre)');
+
+      // Verificar separación clínica vs administrativa: el rol clínico no ve módulos técnicos ni de administración
+      const clinicalSidebarText = await cdp.evaluate(`return document.querySelector('aside')?.innerText || '';`);
+      for (const forbiddenNav of [
+        'Evaluación inicial',
+        'Gestión de modelos',
+        'Arquitectura y artefactos',
+        'Simulador Autoencoder',
+        'Arquitectura y Pesos',
+        'Usuarios y permisos',
+        'Mantenimiento SQL',
+      ]) {
+        assert.equal(
+          clinicalSidebarText.includes(forbiddenNav),
+          false,
+          `El rol clínico no debe visualizar "${forbiddenNav}" en la navegación`
+        );
+      }
     });
 
-    await recordFlow('E2E-08', 'Simulador Autoencoder 12D y Arquitectura/Pesos', async () => {
-      await clickButtonByText(cdp, 'Simulador Autoencoder');
+    await recordFlow('E2E-08', 'Separación RBAC y módulo administrativo de Modelos / Arquitectura', async () => {
+      await clickButtonByText(cdp, 'Salir');
+      await waitForText(cdp, 'Ingresar al Sistema Clínico');
+      await setSelectValue(cdp, 'select', 'admin', 0);
+      await sleep(80);
+      await clickButtonByText(cdp, 'Ingresar al Sistema Clínico');
+      await waitForText(cdp, 'Segundo Factor de Autenticación (MFA)');
+      await setInputValue(cdp, 'input[placeholder="000000"]', '123456', 0);
+      await clickButtonByText(cdp, 'Validar MFA y Acceder');
+      await waitForText(cdp, 'Arquitectura y artefactos');
+
+      await clickButtonByText(cdp, 'Arquitectura y artefactos');
       await waitForText(cdp, 'arquetipos sintéticos precomputados');
       await clickButtonByText(cdp, 'Arquetipo B');
       await waitForText(cdp, 'Desglose de las 12 Dimensiones Latentes');
 
-      await clickButtonByText(cdp, 'Arquitectura y Pesos');
+      await clickButtonByText(cdp, 'Gestión de modelos');
       await waitForText(cdp, 'Auditoría Científica DICO / DCSA');
+
+      await clickButtonByText(cdp, 'Salir');
+      await waitForText(cdp, 'Ingresar al Sistema Clínico');
+      await setSelectValue(cdp, 'select', 'psicologo', 0);
+      await sleep(80);
+      await clickButtonByText(cdp, 'Ingresar al Sistema Clínico');
+      await waitForText(cdp, 'Segundo Factor de Autenticación (MFA)');
+      await setInputValue(cdp, 'input[placeholder="000000"]', '123456', 0);
+      await clickButtonByText(cdp, 'Validar MFA y Acceder');
+      await waitForText(cdp, 'Central de trabajo');
     });
 
-    await recordFlow('E2E-09', 'Compuerta de seguridad D-06 (E5_insufficient) en Ecosistema de Inteligencia', async () => {
-      await clickButtonByText(cdp, 'Ecosistema de Inteligencia');
+    await recordFlow('E2E-09', 'Compuerta de seguridad D-06 (E5_insufficient) en Inteligencia funcional', async () => {
+      await clickButtonByText(cdp, 'Inteligencia funcional');
       await waitForText(cdp, 'Compuerta D-06 · Representación Latente No Disponible (E5_insufficient)');
     });
 
@@ -632,30 +679,74 @@ async function main() {
         };
         const r22 = await fetch('/api/engines/autoencoder/infer', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...basePayload, model_id: 'encoder_22_checkpoint_fase2' }),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-SISAP-Actor': 'psicologo',
+            'X-SISAP-Role': 'psicologo',
+          },
+          body: JSON.stringify(basePayload),
         }).then((r) => r.json());
+        const r24ForbiddenRes = await fetch('/api/engines/autoencoder/infer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-SISAP-Actor': 'psicologo',
+            'X-SISAP-Role': 'psicologo',
+          },
+          body: JSON.stringify({ ...basePayload, model_id: 'encoder_24_deployed' }),
+        });
+        const rGovForbiddenRes = await fetch('/api/engines/autoencoder/governance/active-model', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-SISAP-Actor': 'psicologo',
+            'X-SISAP-Role': 'psicologo',
+          },
+          body: JSON.stringify({ model_id: 'encoder_24_deployed', justification: 'e2e negative check' }),
+        });
         const r24 = await fetch('/api/engines/autoencoder/infer', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-SISAP-Actor': 'admin',
+            'X-SISAP-Role': 'admin',
+          },
           body: JSON.stringify({ ...basePayload, model_id: 'encoder_24_deployed' }),
         }).then((r) => r.json());
-        return { realPatientId, statusBody, r22, r24 };
+        const govRegistry = await fetch('/api/engines/autoencoder/governance').then((r) => r.json());
+        return {
+          realPatientId,
+          statusBody,
+          r22,
+          r24ForbiddenStatus: r24ForbiddenRes.status,
+          rGovForbiddenStatus: rGovForbiddenRes.status,
+          r24,
+          govRegistry,
+        };
       `);
 
       assert.ok(res.realPatientId, 'Debe resolverse patient_id UUID por seudónimo');
       assert.equal(res.statusBody.motors.motor_1_autoencoder.integrity_verified, true);
       assert.equal(res.statusBody.motors.motor_5_decision_support.automatic_diagnosis_allowed, false);
       assert.equal(res.r22.status, 'completed');
+      assert.equal(res.r22.model_id, 'encoder_22_checkpoint_fase2');
       assert.equal(res.r22.persistence.persisted, true);
       assert.equal(res.r22.latent_vector.length, 12);
       assert.ok(res.r22.latent_vector.every(Number.isFinite));
       assert.ok(Number.isFinite(res.r22.reconstruction.mse_z));
       assert.equal(res.r22.latent_analysis.epistemological_guardrail.mod_03_opaque_dimensions, true);
       assert.equal(res.r22.latent_analysis.epistemological_guardrail.clinical_diagnosis_allowed, false);
+      assert.equal(res.r24ForbiddenStatus, 403, 'Rol clínico debe recibir 403 al solicitar override de versión');
+      assert.equal(res.rGovForbiddenStatus, 403, 'Rol clínico debe recibir 403 al intentar cambiar modelo activo');
       assert.equal(res.r24.status, 'completed');
       assert.equal(res.r24.latent_vector.length, 12);
       assert.equal(res.r24.reconstruction.per_variable.length, 24);
+      assert.equal(res.govRegistry.active_model_id, 'encoder_22_checkpoint_fase2');
+      assert.ok(Array.isArray(res.govRegistry.recent_runs) && res.govRegistry.recent_runs.length >= 1);
+      const latestRun = res.govRegistry.recent_runs[0];
+      assert.ok(latestRun.model_id && latestRun.model_version && latestRun.artifact_sha256);
+      assert.ok(latestRun.preprocessing_version && latestRun.input_schema_version && latestRun.executed_at);
+      assert.ok(latestRun.patient_or_evaluation_id && latestRun.execution_status);
     });
 
     await recordFlow('E2E-11', 'Monitorización soberana de errores cliente y sanitización anti-PHI', async () => {

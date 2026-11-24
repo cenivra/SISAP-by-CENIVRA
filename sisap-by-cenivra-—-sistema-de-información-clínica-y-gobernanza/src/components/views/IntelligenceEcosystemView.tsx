@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
   BrainCircuit,
   CheckCircle2,
   Cpu,
+  Database,
   Download,
   FileText,
   GitCompare,
   Layers,
+  Lock,
   MessageSquareText,
   Scale,
   ShieldAlert,
@@ -33,7 +36,11 @@ import {
   validateCompleteEvaluationD06,
   ScoringMode,
 } from '../../services/scalesEngine';
-import { PatientApiService, EnginesStatusResponse } from '../../services/patientApiService';
+import {
+  PatientApiService,
+  EnginesStatusResponse,
+  ModelGovernanceRegistryPayload,
+} from '../../services/patientApiService';
 import { PERCENTILES_REFERENCIA_12D } from '../../data/autoencoderData';
 import { LatentIntervalChart } from '../LatentIntervalChart';
 import { ReconstructionBarsChart } from '../ReconstructionBarsChart';
@@ -42,6 +49,8 @@ interface IntelligenceEcosystemViewProps {
   currentUser: UserAccount;
   roleConfig: RoleConfig;
   selectedPseudonym: string;
+  activeGovernedModelId?: string;
+  initialTab?: MotorTab;
 }
 
 type MotorTab = 'motor1' | 'motor2' | 'motor3' | 'motor4' | 'motor5';
@@ -91,12 +100,27 @@ export const IntelligenceEcosystemView: React.FC<IntelligenceEcosystemViewProps>
   currentUser,
   roleConfig,
   selectedPseudonym,
+  activeGovernedModelId = 'encoder_22_checkpoint_fase2',
+  initialTab = 'motor1',
 }) => {
-  const [activeTab, setActiveTab] = useState<MotorTab>('motor1');
-  const [selectedModelId, setSelectedModelId] = useState<VerifiedModelId>('encoder_22_checkpoint_fase2');
+  const [activeTab, setActiveTab] = useState<MotorTab>(initialTab);
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
   const [compareTargetExp, setCompareTargetExp] = useState<string>('COHORT_MEDIAN_P50');
   const [engineStatus, setEngineStatus] = useState<EnginesStatusResponse | null>(null);
+  const [governanceInfo, setGovernanceInfo] = useState<ModelGovernanceRegistryPayload | null>(null);
   const [backendConnected, setBackendConnected] = useState<boolean>(false);
+  const [backendRunRecord, setBackendRunRecord] = useState<any | null>(null);
+  const syncedRunKeyRef = useRef<string>('');
+
+  const resolvedGovId =
+    governanceInfo?.active_model_id ||
+    engineStatus?.motors?.motor_1_autoencoder?.default_model_id ||
+    activeGovernedModelId ||
+    'encoder_22_checkpoint_fase2';
+  const selectedModelId: VerifiedModelId =
+    resolvedGovId === 'encoder_24_deployed' ? 'encoder_24_deployed' : 'encoder_22_checkpoint_fase2';
 
   // Motor 5 formulación trazable
   const [formulationSummary, setFormulationSummary] = useState<string>('');
@@ -117,10 +141,15 @@ export const IntelligenceEcosystemView: React.FC<IntelligenceEcosystemViewProps>
 
   useEffect(() => {
     let active = true;
-    PatientApiService.getEnginesStatus()
-      .then((res) => {
+    setBackendRunRecord(null);
+    Promise.all([
+      PatientApiService.getEnginesStatus(),
+      PatientApiService.getAutoencoderGovernance().catch(() => null),
+    ])
+      .then(([statusRes, govRes]) => {
         if (!active) return;
-        setEngineStatus(res);
+        setEngineStatus(statusRes);
+        if (govRes) setGovernanceInfo(govRes);
         setBackendConnected(true);
       })
       .catch(() => {
@@ -130,7 +159,7 @@ export const IntelligenceEcosystemView: React.FC<IntelligenceEcosystemViewProps>
     return () => {
       active = false;
     };
-  }, [selectedPseudonym]);
+  }, [selectedPseudonym, activeGovernedModelId]);
 
   const allPatients = StorageService.getPatients();
   const activePatient = StorageService.getPatient(selectedPseudonym);
@@ -200,6 +229,52 @@ export const IntelligenceEcosystemView: React.FC<IntelligenceEcosystemViewProps>
     const result: AutoencoderInferenceResult = AutoencoderEngine.runVerifiedInference(v24, selectedModelId);
     return { ready: true, reason: 'Pipeline D-06 completo y pesos verificados.', result };
   }, [latestEval, selectedModelId]);
+
+  useEffect(() => {
+    if (!backendConnected || !motor1State.ready || !latestEval) return;
+    const syncKey = `${selectedPseudonym}::${latestEval.id}::${resolvedGovId}`;
+    if (syncedRunKeyRef.current === syncKey) return;
+    syncedRunKeyRef.current = syncKey;
+
+    let active = true;
+    const mode: ScoringMode = latestEval.modo_scoring || 'excel_canonico';
+    const bslGen = latestEval.bsl_general_0_1 ?? latestEval.calculados?.bsl_general ?? Number.NaN;
+    PatientApiService.searchPatients(selectedPseudonym)
+      .then((matches) => {
+        const match = matches.find((m) => m.pseudonym === selectedPseudonym || m.patient_id === selectedPseudonym);
+        return PatientApiService.runAutoencoderInference({
+          patient_id: match?.patient_id,
+          id_registro: latestEval.id,
+          modo_scoring: mode,
+          persist: Boolean(match?.patient_id),
+          edad: latestEval.edad,
+          tiempo_consumo: latestEval.tiempo_consumo_anios,
+          trat_previos: latestEval.tratamientos_previos_cuenta,
+          sustancia_principal: latestEval.sustancia_principal,
+          bis11: { modo_captura: mode, respuestas: parseRawNumbers(latestEval.raw_bis_11 || '', 30, 2) },
+          bads: { modo_captura: 'items_crudos', respuestas: parseRawNumbers(latestEval.raw_bads || '', 25, 0) },
+          eros: { modo_captura: mode, respuestas: parseRawNumbers(latestEval.raw_eros || '', 10, 1) },
+          gad7: { modo_captura: 'items_crudos', respuestas: parseRawNumbers(latestEval.raw_gad_7 || '', 7, 0) },
+          staxi2: { modo_captura: 'items_crudos', respuestas: parseRawNumbers(latestEval.raw_staxi_2 || '', 49, 1) },
+          bsl23: {
+            modo_captura: 'items_crudos',
+            respuestas: parseRawNumbers(latestEval.raw_bsl_23 || '', 23, 0),
+            respuestas_conductuales: parseRawNumbers(latestEval.raw_bsl_23_conductual || '', 11, 0),
+            general_score_0_1: Number(bslGen),
+          },
+        });
+      })
+      .then((res) => {
+        if (active && res) setBackendRunRecord(res);
+      })
+      .catch(() => {
+        // Silencioso si se consulta expediente sin vínculo SQL
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [backendConnected, motor1State.ready, latestEval, selectedPseudonym, resolvedGovId]);
 
   // Motor 2: Series longitudinales + RCI
   const motor2Trajectories = useMemo(() => {
@@ -449,9 +524,11 @@ export const IntelligenceEcosystemView: React.FC<IntelligenceEcosystemViewProps>
 
   const handleExportReport = () => {
     const mdLines = [
-      `# Síntesis de Inteligencia Clínica Trazable — ${selectedPseudonym}`,
+      `# Síntesis de Inteligencia Funcional Trazable — ${selectedPseudonym}`,
       `Fecha UTC: ${new Date().toISOString()}`,
-      `Modelo Autoencoder: ${selectedModelId}`,
+      roleConfig.administra
+        ? `Modelo Autoencoder: ${selectedModelId}`
+        : 'Modelo funcional: Institucional autorizado (gobernanza administrativa)',
       '',
       '## 1. Motor 1 — Representación Latente 12D (MOD-03 Opaca)',
       motor1State.ready && motor1State.result
@@ -479,86 +556,185 @@ export const IntelligenceEcosystemView: React.FC<IntelligenceEcosystemViewProps>
     URL.revokeObjectURL(url);
   };
 
-  const tabs: Array<{ id: MotorTab; label: string; icon: React.ReactNode }> = [
-    { id: 'motor1', label: '1 · Autoencoder Latente', icon: <Cpu className="w-3.5 h-3.5" /> },
-    { id: 'motor2', label: '2 · Analítica Longitudinal', icon: <Activity className="w-3.5 h-3.5" /> },
-    { id: 'motor3', label: '3 · Narrativa y Procesos', icon: <MessageSquareText className="w-3.5 h-3.5" /> },
-    { id: 'motor4', label: '4 · Alineación Multimodal', icon: <Layers className="w-3.5 h-3.5" /> },
-    { id: 'motor5', label: '5 · Apoyo a Decisiones', icon: <Scale className="w-3.5 h-3.5" /> },
+  const functionalQuestions: Array<{
+    id: MotorTab;
+    title: string;
+    question: string;
+    statusLabel: string;
+    statusTone: 'ok' | 'warn' | 'pend';
+    icon: React.ReactNode;
+  }> = [
+    {
+      id: 'motor1',
+      title: 'Representación funcional transversal',
+      question: 'Perfil latente 12D frente a cohorte de referencia',
+      statusLabel: motor1State.ready ? 'Disponible' : 'Insuficiente (E5)',
+      statusTone: motor1State.ready ? 'ok' : 'warn',
+      icon: <Cpu className="w-4 h-4" />,
+    },
+    {
+      id: 'motor2',
+      title: 'Evolución longitudinal',
+      question: 'Trayectorias y cambio confiable (RCI)',
+      statusLabel: motor2Trajectories.length > 0 ? `${motor2Trajectories.length} series` : 'Sin series',
+      statusTone: motor2Trajectories.length > 0 ? 'ok' : 'pend',
+      icon: <Activity className="w-4 h-4" />,
+    },
+    {
+      id: 'motor3',
+      title: 'Procesos narrativos y conductuales',
+      question: 'Marcadores léxicos en narraciones y notas',
+      statusLabel: engineStatus?.motors?.motor_3_narrative_behavioral?.onnx_artifact?.inference_ready
+        ? 'Disponible'
+        : 'Proceso pendiente (solo léxico)',
+      statusTone: engineStatus?.motors?.motor_3_narrative_behavioral?.onnx_artifact?.inference_ready ? 'ok' : 'pend',
+      icon: <MessageSquareText className="w-4 h-4" />,
+    },
+    {
+      id: 'motor4',
+      title: 'Integración de fuentes',
+      question: 'Alineación, completitud y procedencia',
+      statusLabel: `${motor4Matrix.filter((m) => m.completitud !== '0%').length}/4 activas`,
+      statusTone: 'ok',
+      icon: <Layers className="w-4 h-4" />,
+    },
+    {
+      id: 'motor5',
+      title: 'Apoyo a la formulación clínica',
+      question: 'Síntesis descriptiva sujeta a revisión humana',
+      statusLabel: 'Revisión humana',
+      statusTone: 'warn',
+      icon: <Scale className="w-4 h-4" />,
+    },
   ];
 
   return (
     <div className="space-y-4">
-      {/* Encabezado de Plataforma */}
-      <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-[var(--sep-claro)]">
+      {/* Encabezado Clínico Sobrio */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-[var(--sep)]">
         <div>
           <div className="flex items-center gap-2">
             <BrainCircuit className="w-5 h-5 text-[var(--accion)]" />
-            <h2 className="text-base font-bold text-[var(--texto)]">
-              Ecosistema de Inteligencia Funcional, Analítica y Multimodal
+            <h2 className="text-lg font-bold tracking-tight text-[var(--texto)]">
+              Inteligencia Funcional y Apoyo Clínico
             </h2>
           </div>
           <p className="text-xs text-[var(--texto-sec)] mt-0.5">
-            Expediente activo: <span className="font-mono font-bold text-[var(--texto)]">{selectedPseudonym}</span> ·{' '}
-            {activePatient?.droga_impacto || 'Sin sustancia de impacto registrada'} · Rol: {currentUser.rol}
+            Análisis descriptivo organizado por preguntas clínicas funcionales · Sin diagnóstico ni prescripción automática.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono">
-          <span className="est-ok inline-flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            SHA-256 Autoencoder Verificado
-          </span>
-          <span className={backendConnected ? 'est-ok' : 'est-pend'}>
-            Backend SQLite: {backendConnected ? 'Conectado (127.0.0.1:8080)' : 'Modo local navegador'}
-          </span>
-        </div>
+        {roleConfig.administra && (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="est-ok inline-flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Integridad verificada
+            </span>
+            <span className={backendConnected ? 'est-ok' : 'est-pend'}>
+              {backendConnected ? 'SQLite local conectado' : 'Modo local'}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Barra de Navegación por Motores */}
-      <div className="flex flex-wrap gap-1.5 border-b border-[var(--sep-claro)] pb-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-1.5 rounded text-xs font-semibold inline-flex items-center gap-1.5 transition-colors border ${
-              activeTab === tab.id
-                ? 'bg-[var(--accion)] text-white border-[var(--accion)]'
-                : 'bg-[var(--panel)] text-[var(--texto)] border-[var(--sep)] hover:bg-[var(--nav-hover)]'
-            }`}
-          >
-            {tab.icon}
-            <span>{tab.label}</span>
-          </button>
-        ))}
+      {/* Navegación por Preguntas Funcionales (única barra unificada) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2">
+        {functionalQuestions.map((card) => {
+          const isCurrent = activeTab === card.id;
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => setActiveTab(card.id)}
+              className={`text-left p-3 rounded-[var(--r)] border transition-colors cursor-pointer flex flex-col justify-between gap-2 ${
+                isCurrent
+                  ? 'bg-[var(--captura)] border-[var(--accion)]'
+                  : 'bg-[var(--panel)] border-[var(--sep-claro)] hover:bg-[var(--panel-elev)]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className={isCurrent ? 'text-[var(--accion)]' : 'text-[var(--texto-tenue)]'}>{card.icon}</span>
+                <span
+                  className={
+                    card.statusTone === 'ok' ? 'est-ok' : card.statusTone === 'warn' ? 'est-warn' : 'est-pend'
+                  }
+                >
+                  {card.statusLabel}
+                </span>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[var(--texto)]">{card.title}</div>
+                <div className="text-[11px] text-[var(--texto-tenue)] mt-0.5 leading-snug">{card.question}</div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* MOTOR 1: Autoencoder y Representación Latente */}
+      {/* 1: Representación Funcional Transversal */}
       {activeTab === 'motor1' && (
         <div className="space-y-4">
-          <div className="sisap-captura flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <div className="text-xs font-bold text-[var(--texto)]">Selección de Arquitectura Verificada (Capa 5 SELU)</div>
-              <div className="text-[11px] text-[var(--texto-sec)]">
-                Paridad numérica verificada frente a R 4.6.1 y cohorte canónica N=166. EROS_raw excluido e independiente.
+          {roleConfig.administra ? (
+            <div className="wb-surface-elev p-3.5 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-xs">
+                  <Lock className="w-3.5 h-3.5 text-[var(--info)]" />
+                  <span className="font-semibold text-[var(--texto)]">
+                    Modelo autorizado: <span className="sisap-mono text-[var(--accion)]">{resolvedGovId}</span>
+                  </span>
+                </div>
+                <span className={motor1State.ready ? 'est-ok' : 'est-warn'}>
+                  {!motor1State.ready
+                    ? 'Información insuficiente (D-06)'
+                    : backendRunRecord?.persistence?.persisted
+                    ? `Auditado (${backendRunRecord.persistence.run_id})`
+                    : 'Inferencia verificada'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] sisap-mono tabular-nums">
+                <div className="wb-metric-cell py-1.5 px-2.5">
+                  <div className="wb-eyebrow">model_id</div>
+                  <div className="text-[var(--texto)] truncate font-semibold">
+                    {backendRunRecord?.traceability?.model_id || resolvedGovId}
+                  </div>
+                </div>
+                <div className="wb-metric-cell py-1.5 px-2.5">
+                  <div className="wb-eyebrow">artifact_sha256</div>
+                  <div className="text-[var(--normal)] truncate">
+                    {(backendRunRecord?.traceability?.artifact_sha256 ||
+                      governanceInfo?.active_model?.artifact_sha256 ||
+                      motor1State.result?.verifiedMetrics?.model_sha256_prefix ||
+                      'Verificado').slice(0, 18)}
+                  </div>
+                </div>
+                <div className="wb-metric-cell py-1.5 px-2.5">
+                  <div className="wb-eyebrow">patient / eval_id</div>
+                  <div className="text-[var(--accion)] truncate font-semibold">
+                    {backendRunRecord?.traceability?.patient_or_evaluation_id || latestEval?.id || selectedPseudonym}
+                  </div>
+                </div>
+                <div className="wb-metric-cell py-1.5 px-2.5">
+                  <div className="wb-eyebrow">execution_status</div>
+                  <div className="text-[var(--texto)] truncate">
+                    {backendRunRecord?.traceability?.execution_status || (motor1State.ready ? 'completed' : 'blocked_d06')}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <select
-                value={selectedModelId}
-                onChange={(e) => setSelectedModelId(e.target.value as VerifiedModelId)}
-                className="sisap-select text-xs"
-              >
-                <option value="encoder_22_checkpoint_fase2">
-                  encoder_22_checkpoint_fase2 (22→32→24→12 · Verificado Exacto)
-                </option>
-                <option value="encoder_24_deployed">
-                  encoder_24_deployed (24→32→24→12 · Validación externa pendiente)
-                </option>
-              </select>
+          ) : (
+            <div className="wb-surface p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div>
+                <span className="font-semibold text-[var(--texto)]">Representación funcional transversal: </span>
+                <span className="text-[var(--texto-sec)]">
+                  procesamiento automático con el modelo institucional autorizado (uso descriptivo, sin selección técnica manual).
+                </span>
+              </div>
+              <span className={motor1State.ready ? 'est-ok' : 'est-warn'}>
+                {motor1State.ready ? 'Resultado disponible' : 'Información insuficiente'}
+              </span>
             </div>
-          </div>
+          )}
 
           {!motor1State.ready || !motor1State.result ? (
             <div className="sisap-tarjeta border border-[var(--advertencia)]/50 space-y-2">
@@ -874,6 +1050,97 @@ export const IntelligenceEcosystemView: React.FC<IntelligenceEcosystemViewProps>
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Matriz Epistemológica de 3 Columnas: E1-E3 | E4 | E5 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
+            <div className="wb-surface p-3.5 space-y-2 border-t-2 border-t-[var(--normal)]">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[var(--texto)]">Columna 1 · Evidencia E1–E3</span>
+                <span className="est-ok">Observacional / Longitudinal</span>
+              </div>
+              <p className="text-[11px] text-[var(--texto-sec)]">
+                Hechos psicométricos directos, deltas de seguimiento e indicadores RCI sin inferencia opaca.
+              </p>
+              <div className="space-y-1 font-mono text-[10.5px]">
+                {motor2Trajectories.length === 0 ? (
+                  <div className="text-[var(--texto-tenue)]">Sin series longitudinales cargadas aún.</div>
+                ) : (
+                  motor2Trajectories.map((t) => (
+                    <div key={t.instrument} className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)] flex justify-between gap-2">
+                      <span className="font-semibold text-[var(--texto)]">{t.instrument}</span>
+                      <span className="text-[var(--texto-sec)] truncate">{t.rciLabel}</span>
+                    </div>
+                  ))
+                )}
+                <div className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)] text-[var(--texto-sec)]">
+                  Registros narrativos/notas: {motor3Analysis.totalEntries}
+                </div>
+              </div>
+            </div>
+
+            <div className="wb-surface p-3.5 space-y-2 border-t-2 border-t-[var(--accion)]">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[var(--texto)]">Columna 2 · Evidencia E4</span>
+                <span className={motor1State.ready ? 'est-ok' : 'est-warn'}>
+                  {motor1State.ready ? 'Hipótesis Latente' : 'Sin D-06'}
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--texto-sec)]">
+                Geometría 12D del modelo{' '}
+                {roleConfig.administra ? (
+                  <>
+                    gobernado <code className="font-mono text-[var(--accion)]">{resolvedGovId}</code>
+                  </>
+                ) : (
+                  'institucional autorizado'
+                )}{' '}
+                (sin comparaciones entre modelos distintos).
+              </p>
+              {motor1State.ready && motor1State.result ? (
+                <div className="space-y-1 font-mono text-[10.5px] tabular-nums">
+                  <div className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)] flex justify-between">
+                    <span>MSE_z:</span>
+                    <span className="font-bold">{motor1State.result.verifiedMetrics.mse_z.toFixed(4)}</span>
+                  </div>
+                  <div className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)] flex justify-between">
+                    <span>Dist. mediana p50:</span>
+                    <span className="font-bold text-[var(--accion)]">
+                      {motor1State.result.verifiedMetrics.distance_to_cohort_median_p50.toFixed(4)}
+                    </span>
+                  </div>
+                  <div className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)] flex justify-between">
+                    <span>Dims fuera IQR:</span>
+                    <span>{motor1State.result.verifiedMetrics.n_outside_iqr} / 12</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2 rounded bg-[var(--campo)] border border-[var(--sep)] text-[11px] text-[var(--advertencia)]">
+                  E5_insufficient · Compuerta D-06 incompleta para generar coordenadas latentes 12D.
+                </div>
+              )}
+            </div>
+
+            <div className="wb-surface p-3.5 space-y-2 border-t-2 border-t-[var(--advertencia)]">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[var(--texto)]">Columna 3 · Nivel E5 y Revisión</span>
+                <span className="est-warn">pending_human_review</span>
+              </div>
+              <p className="text-[11px] text-[var(--texto-sec)]">
+                Brechas de evidencia, artefactos inactivos y validación clínica obligatoria por profesional tratante.
+              </p>
+              <ul className="space-y-1 text-[10.5px] font-mono text-[var(--texto-sec)]">
+                <li className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)]">
+                  Motor 3 ONNX: {engineStatus?.motors?.motor_3_narrative_behavioral?.onnx_artifact?.inference_ready ? 'Listo' : 'Inactivo (solo conteo léxico E1/E3)'}
+                </li>
+                <li className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)]">
+                  Formulaciones trazables guardadas: {localFormulations.length}
+                </li>
+                <li className="p-1.5 rounded bg-[var(--campo)] border border-[var(--sep)] text-[var(--riesgo)]">
+                  Diagnóstico automático: PROHIBIDO
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Registro de hipótesis clínica trazable + Exportación */}

@@ -3,11 +3,14 @@ import { User as FirebaseUser } from 'firebase/auth';
 import { ClinicalDraft, PatientClinico, UserAccount } from './types/clinical';
 import { INITIAL_USERS, ROLES } from './constants/clinicalConstants';
 import { StorageService } from './services/storageService';
+import { PatientApiService } from './services/patientApiService';
 import { initAuth } from './services/googleDriveService';
 
 // Layout Components
 import { Header } from './components/Header';
-import { Sidebar, NavScreen } from './components/Sidebar';
+import { Sidebar, NavScreen, SCREEN_LABELS } from './components/Sidebar';
+import { WorkbenchContextRibbon } from './components/WorkbenchContextRibbon';
+import { DesktopStorageModal } from './components/DesktopStorageModal';
 import { Footer } from './components/Footer';
 import { LoginModal } from './components/LoginModal';
 import { GoogleDriveModal } from './components/GoogleDriveModal';
@@ -18,7 +21,6 @@ import { TelemetryService, installGlobalErrorMonitoring } from './services/telem
 import { WorkDashboardView } from './components/views/WorkDashboardView';
 import { PatientsView } from './components/views/PatientsView';
 import { ExploratoryInterviewView } from './components/views/ExploratoryInterviewView';
-import { InitialEvaluationView } from './components/views/InitialEvaluationView';
 import { FollowUpScalesView } from './components/views/FollowUpScalesView';
 import { PsychometricCenterView } from './components/views/PsychometricCenterView';
 import { PsychologicalEvolutionView } from './components/views/PsychologicalEvolutionView';
@@ -34,8 +36,11 @@ import { SqlSchemaView } from './components/views/SqlSchemaView';
 import { CybersecurityView } from './components/views/CybersecurityView';
 
 export default function App() {
-  // Session & Authentication
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(INITIAL_USERS[3]); // Default: Mtra. Sofía Carrillo (psicologo)
+  // Operational Mode & Session Authentication
+  const [appMode, setAppMode] = useState<'demo' | 'institutional'>(() => StorageService.getAppMode());
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() =>
+    StorageService.getAppMode() === 'institutional' ? null : INITIAL_USERS[3]
+  ); // En modo demo inicia Mtra. Sofía Carrillo (psicologo); en institucional exige login explícito
   const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
 
   // App Navigation & Selected Patient
@@ -53,6 +58,8 @@ export default function App() {
   // Modals & Telemetry Opt-in
   const [showDriveModal, setShowDriveModal] = useState<boolean>(false);
   const [showTelemetryModal, setShowTelemetryModal] = useState<boolean>(false);
+  const [showDesktopStorageModal, setShowDesktopStorageModal] = useState<boolean>(false);
+  const [activeGovernedModelId, setActiveGovernedModelId] = useState<string>('encoder_22_checkpoint_fase2');
   const [showTelemetryBanner, setShowTelemetryBanner] = useState<boolean>(!TelemetryService.hasUserDecided());
   const [isTelemetryEnabled, setIsTelemetryEnabled] = useState<boolean>(TelemetryService.isTelemetryEnabled());
 
@@ -71,6 +78,13 @@ export default function App() {
     } catch {}
 
     const uninstallMonitoring = installGlobalErrorMonitoring();
+    void PatientApiService.syncDesktopApiBase().then(() =>
+      PatientApiService.getAutoencoderGovernance()
+        .then((gov) => {
+          if (gov?.active_model_id) setActiveGovernedModelId(gov.active_model_id);
+        })
+        .catch(() => undefined)
+    );
 
     // Google Auth listener
     const unsubscribe = initAuth(
@@ -87,6 +101,10 @@ export default function App() {
       if (unsubscribe) unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    PatientApiService.setSessionActor(currentUser?.u || '', currentUser?.rol || '');
+  }, [currentUser]);
 
   // Inactivity Auto-Lock (NOM-024-SSA3-2012 / Ciberseguridad)
   useEffect(() => {
@@ -152,7 +170,7 @@ export default function App() {
     // Map screen ID to NavScreen
     let targetScreen: NavScreen = 'inicio';
     if (draft.screen.startsWith('ent')) targetScreen = 'entrevista';
-    else if (draft.screen.startsWith('ei') || draft.screen.startsWith('eval')) targetScreen = 'eval_inicial';
+    else if (draft.screen.startsWith('ei') || draft.screen.startsWith('eval')) targetScreen = 'centro_psicometrico';
     else if (draft.screen.startsWith('seg')) targetScreen = 'seguimiento';
     else if (draft.screen.startsWith('ev')) targetScreen = 'evolucion';
     else if (draft.screen.startsWith('fa')) targetScreen = 'familiar';
@@ -177,14 +195,20 @@ export default function App() {
   if (!currentUser) {
     return (
       <LoginModal
+        appMode={appMode}
+        onAppModeChange={(nextMode) => {
+          StorageService.setAppMode(nextMode);
+          setAppMode(nextMode);
+        }}
         onLoginSuccess={(user) => {
           setCurrentUser(user);
+          PatientApiService.setSessionActor(user.u, user.rol);
           StorageService.logAction({
             usuario: user.u,
             rol: user.rol,
             accion: 'Inicio de sesión con éxito',
             exp: '—',
-            detalles: `Ingreso con nivel ${ROLES[user.rol]?.n}.`,
+            detalles: `Ingreso en modo ${appMode} con nivel ${ROLES[user.rol]?.n}.`,
           });
           setCurrentScreen('inicio');
         }}
@@ -194,6 +218,13 @@ export default function App() {
 
   const roleConfig = ROLES[currentUser.rol];
   const patients = StorageService.getPatients();
+  const ADMIN_ONLY_SCREENS: NavScreen[] = ['analisis', 'simulador', 'usuarios', 'sql', 'ciberseguridad', 'trazabilidad'];
+  const effectiveScreen: NavScreen =
+    currentScreen === 'blindado' && !roleConfig.capa_blindada
+      ? 'inicio'
+      : ADMIN_ONLY_SCREENS.includes(currentScreen) && !roleConfig.administra
+      ? 'inicio'
+      : currentScreen;
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-[var(--fondo)] text-[var(--texto)]">
@@ -219,16 +250,21 @@ export default function App() {
         onOpenDrafts={() => setCurrentScreen('inicio')}
         onOpenDriveModal={() => setShowDriveModal(true)}
         onOpenTelemetryModal={() => setShowTelemetryModal(true)}
+        onOpenDesktopStorageModal={() => setShowDesktopStorageModal(true)}
         isTelemetryEnabled={isTelemetryEnabled}
         googleUser={googleUser}
         onLogout={handleLogout}
+        currentScreenLabel={SCREEN_LABELS[effectiveScreen]}
+        appMode={appMode}
       />
 
-      {/* Main Body with Sidebar and Content View */}
+      {/* Main Body with Sidebar, Context Ribbon and Content View */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          currentScreen={currentScreen}
+          currentScreen={effectiveScreen}
           onNavigate={(screen) => {
+            if (screen === 'blindado' && !roleConfig.capa_blindada) return;
+            if (ADMIN_ONLY_SCREENS.includes(screen) && !roleConfig.administra) return;
             setCurrentScreen(screen);
             setActiveDraftData(undefined);
             TelemetryService.trackEvent({
@@ -243,12 +279,30 @@ export default function App() {
           roleConfig={roleConfig}
         />
 
-        {/* Dynamic Screen View */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {currentScreen === 'inicio' && (
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <WorkbenchContextRibbon
+            selectedPseudonym={selectedPseudonym}
+            onSelectPseudonym={setSelectedPseudonym}
+            patients={patients}
+            isAnonymousMode={isAnonymousMode}
+            roleConfig={roleConfig}
+            currentScreen={effectiveScreen}
+            onNavigate={(screen) => {
+              if (screen === 'blindado' && !roleConfig.capa_blindada) return;
+              if (ADMIN_ONLY_SCREENS.includes(screen) && !roleConfig.administra) return;
+              setCurrentScreen(screen);
+              setActiveDraftData(undefined);
+            }}
+            activeGovernedModelId={activeGovernedModelId}
+          />
+
+          {/* Dynamic Screen View */}
+          <main className="flex-1 overflow-y-auto p-4 sm:p-5">
+          {effectiveScreen === 'inicio' && (
             <WorkDashboardView
               currentUser={currentUser}
               patients={patients}
+              selectedPseudonym={selectedPseudonym}
               isAnonymousMode={isAnonymousMode}
               onNavigate={(screen, pat) => {
                 if (pat) setSelectedPseudonym(pat);
@@ -260,7 +314,7 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'pacientes' && (
+          {effectiveScreen === 'pacientes' && (
             <PatientsView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -272,7 +326,7 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'entrevista' && (
+          {effectiveScreen === 'entrevista' && (
             <ExploratoryInterviewView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -282,7 +336,7 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'centro_psicometrico' && (
+          {effectiveScreen === 'centro_psicometrico' && (
             <PsychometricCenterView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -296,18 +350,7 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'eval_inicial' && (
-            <InitialEvaluationView
-              currentUser={currentUser}
-              roleConfig={roleConfig}
-              selectedPseudonym={selectedPseudonym}
-              initialData={activeDraftData}
-              onDraftSaved={reloadDraftsCount}
-              onOpenPsychometricCenter={() => setCurrentScreen('centro_psicometrico')}
-            />
-          )}
-
-          {currentScreen === 'seguimiento' && (
+          {effectiveScreen === 'seguimiento' && (
             <FollowUpScalesView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -318,7 +361,7 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'evolucion' && (
+          {effectiveScreen === 'evolucion' && (
             <PsychologicalEvolutionView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -328,7 +371,7 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'familiar' && (
+          {effectiveScreen === 'familiar' && (
             <FamilySessionView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -338,7 +381,7 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'narracion' && (
+          {effectiveScreen === 'narracion' && (
             <WeeklyNarrativeView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -348,21 +391,27 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'ecosistema' && (
+          {(effectiveScreen === 'ecosistema' || effectiveScreen === 'apoyo_decisiones') && (
             <IntelligenceEcosystemView
               currentUser={currentUser}
               roleConfig={roleConfig}
               selectedPseudonym={selectedPseudonym}
+              activeGovernedModelId={activeGovernedModelId}
+              initialTab={effectiveScreen === 'apoyo_decisiones' ? 'motor5' : 'motor1'}
             />
           )}
 
-          {currentScreen === 'simulador' && <AutoencoderSimulatorView />}
+          {effectiveScreen === 'simulador' && roleConfig.administra && <AutoencoderSimulatorView />}
 
-          {currentScreen === 'analisis' && (
-            <AnalysisModelView currentUser={currentUser} roleConfig={roleConfig} />
+          {effectiveScreen === 'analisis' && roleConfig.administra && (
+            <AnalysisModelView
+              currentUser={currentUser}
+              roleConfig={roleConfig}
+              onGovernanceUpdated={(newModelId) => setActiveGovernedModelId(newModelId)}
+            />
           )}
 
-          {currentScreen === 'trazabilidad' && (
+          {effectiveScreen === 'trazabilidad' && roleConfig.administra && (
             <TraceabilityView
               currentUser={currentUser}
               roleConfig={roleConfig}
@@ -370,24 +419,34 @@ export default function App() {
             />
           )}
 
-          {currentScreen === 'ciberseguridad' && (
+          {effectiveScreen === 'ciberseguridad' && roleConfig.administra && (
             <CybersecurityView currentUser={currentUser} roleConfig={roleConfig} />
           )}
 
-          {currentScreen === 'blindado' && (
+          {effectiveScreen === 'blindado' && roleConfig.capa_blindada && (
             <BlindLayerView currentUser={currentUser} roleConfig={roleConfig} />
           )}
 
-          {currentScreen === 'usuarios' && (
+          {effectiveScreen === 'usuarios' && roleConfig.administra && (
             <UsersManagementView currentUser={currentUser} roleConfig={roleConfig} />
           )}
 
-          {currentScreen === 'sql' && <SqlSchemaView />}
+          {effectiveScreen === 'sql' && roleConfig.administra && <SqlSchemaView />}
         </main>
+        </div>
       </div>
 
       {/* Footer */}
-      <Footer currentUser={currentUser} googleUser={googleUser} />
+      <Footer
+        currentUser={currentUser}
+        googleUser={googleUser}
+        appMode={appMode}
+        activeGovernedModelId={activeGovernedModelId}
+      />
+
+      {showDesktopStorageModal && (
+        <DesktopStorageModal onClose={() => setShowDesktopStorageModal(false)} />
+      )}
 
       {/* Google Drive Integration Modal */}
       <GoogleDriveModal
