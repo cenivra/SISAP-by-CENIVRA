@@ -100,6 +100,12 @@ export function healthCheck() {
     'model_runs',
     'model_outputs',
     'audit_events',
+    'follow_up_evaluations',
+    'clinical_formulations',
+    'psychometric_evaluations',
+    'psychometric_item_responses',
+    'psychometric_results',
+    'model_governance_registry',
   ];
 
   const present = new Set(

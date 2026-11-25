@@ -1,5 +1,8 @@
 # SISAP by CENIVRA
 
+> [!NOTE]
+> **Control Documental (Fuente Única de Verdad `v1.1.0`):** Este archivo se conserva como registro histórico de la fase conceptual inicial (`v1.0`, agosto 2026, arquitectura Python / Dash). La evaluación de aplicabilidad regulatoria y uso previsto **vigente para la plataforma real `v1.1.0` (Electron + React + Node.js SQLite WAL + R)** reside en [`docs/lifecycle/01_intended_use_and_scope/REGULATORY_SCOPE_AND_INTENDED_USE.md`](../lifecycle/01_intended_use_and_scope/REGULATORY_SCOPE_AND_INTENDED_USE.md).
+
 # Intended Use — Uso Previsto
 
 **Documento:** Intended Use  

@@ -92,7 +92,12 @@ release-builds/
 .coverage
 .coverage.*
 htmlcov/
+coverage/
 coverage.xml
+playwright-report/
+test-results/
+**/e2e/results.json
+**/e2e/playwright-results.json
 *.cover
 *.py.cover
 .tox/
@@ -109,6 +114,9 @@ coverage.xml
 *.db-journal
 
 *.csv
+!**/engines/autoencoder/models/percentiles_referencia_12d.csv
+!**/engines/autoencoder/preprocessing/parametros_normalizacion_24_verificados.csv
+!**/engines/autoencoder/evaluation/*.csv
 *.tsv
 *.xlsx
 *.xls
@@ -146,6 +154,8 @@ checkpoints/
 checkpoint-*/
 modelos_experimentales/
 embeddings/
+!**/engines/autoencoder/embeddings/
+!**/engines/autoencoder/embeddings/**
 embeddings_*/
 *_embeddings.npz
 *_embeddings.csv

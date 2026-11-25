@@ -228,7 +228,7 @@ export function getCurrentOtpCode(secretSeed = 'CENIVRA_SISAP_SECURE_MFA_KEY_202
     val = (val << 5) - val + secretSeed.charCodeAt(i) * (timeWindow % 1000);
     val |= 0;
   }
-  const code = Math.abs(val % 900000 + 100000).toString();
+  const code = ((Math.abs(val) % 900000) + 100000).toString().padStart(6, '0');
 
   return { code, secondsRemaining };
 }

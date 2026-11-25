@@ -1,7 +1,7 @@
 # SISAP by CENIVRA — Sistema de Información Clínica y Gobernanza
 
-**Versión Canónica:** 1.0.0  
-**Arquitectura:** React 19 + TypeScript + Tailwind CSS (Frontend) / Node.js + SQLite WAL (Backend Local) / Electron v45 (Escritorio Windows).  
+**Versión en preparación (`release/1.1.0`):** 1.1.0 *(conservando el release histórico `v1.0.0`)*  
+**Arquitectura:** React 19 + TypeScript + Tailwind CSS (Frontend) / Node.js + SQLite WAL (15 tablas, migraciones `001`–`003`) / Motores `engines/autoencoder` + `engines/psychometrics` / Electron v45 (Escritorio Windows).  
 **Entorno de Distribución:** Local-First, soberano, sin fuga de datos a la nube.
 
 ---
@@ -70,16 +70,17 @@ npm ci
 Antes de arrancar la aplicación, se puede validar la integridad del backend y la compilación:
 
 ```bash
-# Ejecutar suite de pruebas unitarias y de integración backend (15 pruebas con node:sqlite):
+# Ejecutar suite de pruebas unitarias, psicométricas e integración backend (33 pruebas con node:sqlite):
 npm test
 ```
-*Resultado verificado:* 15/15 pruebas pasadas (100% PASS) en ~1 segundo, verificando esquema relacional, migraciones idempotentes, búsquedas parametrizadas seguras ante inyección SQL y restricciones WORM.
+*Resultado verificado:* 33/33 pruebas pasadas (100% PASS), verificando Autoencoder 5 capas + SHA-256, Motores 1–5 (RCI, E1–E5), Centro Psicométrico (6 instrumentos, 3 niveles e inmutabilidad), migraciones idempotentes (`001`–`003`), búsquedas seguras ante SQLi y restricciones WORM.
 
 ```bash
-# Validar compilación estática de producción:
+# Validar tipos TypeScript y compilación estática de producción:
+npm run lint
 npm run build
 ```
-*Resultado verificado:* Compilación exitosa en `dist/` (1706 módulos transformados sin errores).
+*Resultado verificado:* `tsc --noEmit` sin errores y compilación exitosa en `dist/` (`vite build`).
 
 > [!NOTE]
 > Las pruebas automatizadas verifican la integridad estructural, la consistencia del esquema y el aislamiento del proceso. No atribuyen validez diagnóstica clínica ni certifican la idoneidad para entornos médicos de producción sin una homologación institucional previa.
@@ -161,11 +162,12 @@ La aplicación cuenta con usuarios sintéticos preconfigurados **exclusivamente 
 
 ---
 
-## 6. Delimitación del Módulo Autoencoder (Modo Sintético)
+## 6. Módulos Analíticos, Centro Psicométrico y Transparencia
 
-- **Modo Demostrativo:** En esta distribución pública, el módulo de autoencoder opera en modo `SYNTHETIC_DEMO`. La matriz de proyección (`DCT_WEIGHTS_24x12`) fue generada determinísticamente desde cero mediante bases ortonormales discretas (Transformada de Coseno Discreto Tipo II, DCT-II).
-- **Transparencia Científica:** Los pesos de demostración permiten verificar el flujo de la interfaz, el cálculo dimensional y la visualización en radar, pero **NO poseen validez diagnóstica ni predictiva real**.
-- **Desacoplamiento Ético:** Los modelos entrenados con cohortes clínicas reservadas de CENIVRA no forman parte de este repositorio público por motivos de confidencialidad y protección de datos sensibles.
+- **Autoencoder Funcional TUS (`engines/autoencoder/`)**: Inferencia determinista en 5 capas verificada mediante SHA-256 en JS ESM y R, con compuerta D-06 (cero imputación silenciosa) y trazabilidad en `model_runs` / `model_outputs`.
+- **Centro de Evaluación Psicométrica Digital**: Catálogo versionado independiente (`engines/psychometrics/catalog_v1.json`) para `BIS-11 (30)`, `BSL-23 (23)`, `GAD-7 (7)`, `EROS (10 / validación 9)`, `BADS (22 validados + 25 compatibilidad)` y `STAXI-2 (49 TEA literales + estructura 57)`, manteniendo excluido `OCI-R`.
+- **Modo Demostrativo del Simulador**: El componente educativo **Simulador Autoencoder** conserva su separación explícita y banner sintético para demostraciones aisladas sin mezclarse con el expediente clínico.
+- **Actualización desde v1.0.0**: Ejecutar `npm ci`, `npm run build` y `node backend/src/cli/init-db.js`; las migraciones `002` y `003` se aplican automáticamente sin afectar los datos existentes de `v1.0.0`.
 
 ---
 

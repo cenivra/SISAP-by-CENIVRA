@@ -1,0 +1,101 @@
+name: "SISAP Quality Gate (CI/CD)"
+
+on:
+  push:
+    branches: ["main", "release/**"]
+  pull_request:
+    branches: ["main", "release/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: "sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+jobs:
+  quality_gate:
+    name: Quality Gate, Tests, Coverage, Build & E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 0. Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 1. Setup Node.js (>=22.5.0 required for node:sqlite)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: "${{ env.APP_DIR }}/package-lock.json"
+
+      - name: 1b. Reproducible dependency install (npm ci)
+        working-directory: "${{ env.APP_DIR }}"
+        run: npm ci
+
+      - name: 2. Static audit, secret hygiene & ESLint check
+        working-directory: "${{ env.APP_DIR }}"
+        run: |
+          npm run qa:audit
+          npx --yes eslint@9 .
+
+      - name: 3. TypeScript static type check (tsc --noEmit)
+        working-directory: "${{ env.APP_DIR }}"
+        run: npm run lint
+
+      - name: 4. Frontend TypeScript unit tests
+        working-directory: "${{ env.APP_DIR }}"
+        run: npm run test:fe
+
+      - name: 5. Backend integration tests, clean DB migration & LCOV coverage
+        working-directory: "${{ env.APP_DIR }}"
+        run: |
+          npm run test:coverage
+          TMP_DB=$(mktemp -d)
+          SISAP_DB_DIR="$TMP_DB" SISAP_DB_FILE="ci_clean.sqlite3" node backend/src/cli/init-db.js
+          SISAP_DB_DIR="$TMP_DB" SISAP_DB_FILE="ci_clean.sqlite3" node backend/src/cli/seed-fixtures.js
+          SISAP_DB_DIR="$TMP_DB" SISAP_DB_FILE="ci_clean.sqlite3" node backend/src/cli/health.js
+          rm -rf "$TMP_DB"
+
+      - name: 6. SonarQube Cloud scan (when SONAR_TOKEN is configured)
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=true
+
+      - name: 7. Dependency vulnerability audit (npm audit)
+        working-directory: "${{ env.APP_DIR }}"
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: 8. Production build verification (clean without firebase-applet-config.json)
+        working-directory: "${{ env.APP_DIR }}"
+        run: npm run build
+
+      - name: 9. Install Playwright & Chromium for E2E
+        working-directory: "${{ env.APP_DIR }}"
+        run: npx --yes playwright install --with-deps chromium
+
+      - name: 10. Run Chromium E2E flows (12 clinical & governance flows)
+        working-directory: "${{ env.APP_DIR }}"
+        run: npm run test:e2e
+
+      - name: 11. Upload QA, Coverage & E2E Evidence Artifacts (No auto-release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sisap-qa-evidence-${{ github.run_number }}
+          path: |
+            ${{ env.APP_DIR }}/coverage/
+            ${{ env.APP_DIR }}/playwright-report/
+            ${{ env.APP_DIR }}/e2e/results.json
+          retention-days: 30

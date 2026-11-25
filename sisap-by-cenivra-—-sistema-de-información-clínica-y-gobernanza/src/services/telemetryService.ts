@@ -38,12 +38,67 @@ const BLACKLIST_PATTERNS = [
   /familiar/gi,
 ];
 
-function sanitizeString(str: string): string {
-  let cleaned = str;
+export function sanitizeTelemetryString(str: string): string {
+  let cleaned = String(str || '');
   BLACKLIST_PATTERNS.forEach((pattern) => {
     cleaned = cleaned.replace(pattern, '[REDACTED_CLINICAL]');
   });
-  return cleaned;
+  return cleaned.slice(0, 300);
+}
+
+function sanitizeString(str: string): string {
+  return sanitizeTelemetryString(str);
+}
+
+let monitoringInstalled = false;
+
+export function installGlobalErrorMonitoring(): () => void {
+  if (typeof window === 'undefined' || monitoringInstalled) {
+    return () => {};
+  }
+  monitoringInstalled = true;
+
+  const dispatchSanitizedError = (kind: string, rawMsg: string) => {
+    const safeMsg = sanitizeTelemetryString(rawMsg);
+    TelemetryService.trackEvent({
+      event_type: 'system_error',
+      action: `${kind}:${safeMsg}`,
+    });
+    try {
+      const url = `${window.location.origin}/api/monitoring/client-error`;
+      const payload = JSON.stringify({
+        kind: sanitizeTelemetryString(kind),
+        message: safeMsg,
+        route: sanitizeTelemetryString(window.location.pathname || '/'),
+        client_os: detectClientOS(),
+      });
+      if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+        const blob = new Blob([payload], { type: 'application/json' });
+        navigator.sendBeacon(url, blob);
+      }
+    } catch {
+      // No propagar errores secundarios desde monitorización
+    }
+  };
+
+  const onError = (ev: ErrorEvent) => {
+    dispatchSanitizedError('window_error', ev.message || 'Unhandled error');
+  };
+  const onRejection = (ev: PromiseRejectionEvent) => {
+    const reasonMsg =
+      ev.reason && typeof ev.reason === 'object' && 'message' in ev.reason
+        ? String((ev.reason as { message: unknown }).message)
+        : String(ev.reason || 'Unhandled promise rejection');
+    dispatchSanitizedError('unhandled_rejection', reasonMsg);
+  };
+
+  window.addEventListener('error', onError);
+  window.addEventListener('unhandledrejection', onRejection);
+  return () => {
+    window.removeEventListener('error', onError);
+    window.removeEventListener('unhandledrejection', onRejection);
+    monitoringInstalled = false;
+  };
 }
 
 function detectClientOS(): string {
@@ -69,19 +124,19 @@ function detectBrowser(): string {
 
 export const TelemetryService = {
   isTelemetryEnabled(): boolean {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
     // Default is strictly FALSE (Opt-in required)
     return localStorage.getItem(STORAGE_KEYS.OPT_IN) === 'true';
   },
 
   setTelemetryOptIn(enabled: boolean): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     localStorage.setItem(STORAGE_KEYS.OPT_IN, enabled ? 'true' : 'false');
     localStorage.setItem(STORAGE_KEYS.DECIDED, 'true');
   },
 
   hasUserDecided(): boolean {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
     return localStorage.getItem(STORAGE_KEYS.DECIDED) === 'true';
   },
 
@@ -90,7 +145,7 @@ export const TelemetryService = {
   },
 
   getRecentEvents(): TelemetryPayload[] {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return [];
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.BUFFER);
       return raw ? JSON.parse(raw) : [];
@@ -100,7 +155,7 @@ export const TelemetryService = {
   },
 
   clearBuffer(): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     localStorage.removeItem(STORAGE_KEYS.BUFFER);
   },
 

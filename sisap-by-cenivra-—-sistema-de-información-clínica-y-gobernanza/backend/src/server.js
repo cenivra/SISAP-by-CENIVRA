@@ -101,7 +101,13 @@ const handler = async (req, res) => {
       body = await readJsonBody(req);
     }
 
-    const result = await route({ method: req.method, pathname, query, body });
+    const result = await route({
+      method: req.method,
+      pathname,
+      query,
+      body,
+      headers: req.headers,
+    });
     if (!result) {
       return send(res, 404, { error: 'NOT_FOUND', message: 'Ruta no encontrada.' });
     }
@@ -116,6 +122,8 @@ const handler = async (req, res) => {
     return send(res, safe.status, safe.body);
   }
 };
+
+export { closeDatabase };
 
 export function createServer() {
   return http.createServer(handler);

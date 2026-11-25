@@ -77,24 +77,30 @@ Para tener todo el código, esquemas y bases de datos sincronizados con tu Googl
 
 ---
 
-## 6. Estructura de Archivos del Proyecto
+## 6. Estructura de Archivos del Proyecto (`v1.1.0`)
 ```
-SISAP-by-CENIVRA/
+SISAP-by-CENIVRA/sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza/
 ├── instalar_y_ejecutar.bat        <-- Doble clic para instalar y arrancar
 ├── iniciar_sisap.bat              <-- Lanzador diario
 ├── instalar_y_ejecutar.ps1        <-- Lanzador PowerShell
 ├── GUIA_INSTALACION_LOCAL.md      <-- Este manual
-├── package.json                   <-- Dependencias de la app
+├── package.json                   <-- Dependencias y empaquetado v1.1.0
+├── backend/
+│   ├── migrations/                <-- Migraciones aditivas SQLite (001, 002, 003)
+│   ├── src/psychometrics/         <-- Catálogo y motor de puntuación servidor
+│   └── src/services/              <-- Motores 1..5 y servicio psicométrico 3 niveles
+├── engines/
+│   ├── autoencoder/               <-- Modelos verificados SHA-256, inferencia R/JS y tests
+│   └── psychometrics/             <-- catalog_v1.json (6 instrumentos activos; OCI-R excluido)
 ├── src/
 │   ├── App.tsx                    <-- Aplicación principal
-│   ├── components/                <-- Vistas clínicas y modales
-│   ├── constants/                 <-- Roles, SQL scripts y escalas
-│   ├── data/                      <-- Pesos entrenados (24x12)
-│   ├── services/
-│   │   ├── autoencoderEngine.ts   <-- Motor transversal y longitudinal
-│   │   ├── cryptoService.ts       <-- PBKDF2 y generación de sales
-│   │   ├── googleDriveService.ts  <-- API de Google Drive
-│   │   ├── scalesEngine.ts        <-- Calificación de 6 escalas
-│   │   └── storageService.ts      <-- Persistencia local y expedientes
-│   └── types/                     <-- Tipos de datos clínicos y roles
+│   ├── components/views/          <-- Incluye Centro Psicométrico y Ecosistema 5 Motores
+│   ├── psychometrics/             <-- Configuración y puntuación psicométrica desacoplada
+│   ├── services/                  <-- Autoencoder, SQLite API, RCI y almacenamiento local
+│   └── types/                     <-- Tipos clínicos y registros en 3 niveles
 ```
+
+## 7. Actualización desde v1.0.0
+1. Respaldar su carpeta local de datos (`data/local/`) o ejecutar `node backend/src/cli/backup.js`.
+2. Instalar dependencias limpias (`npm ci`) y recompilar (`npm run build`).
+3. Al iniciar el backend (`npm run backend` o `node backend/src/cli/init-db.js`), las migraciones `002_intelligence_engines.sql` y `003_psychometric_center.sql` se aplican automáticamente preservando intactos los datos de `v1.0.0`.

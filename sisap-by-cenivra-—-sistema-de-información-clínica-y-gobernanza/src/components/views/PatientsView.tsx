@@ -879,11 +879,63 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
             </div>
           </div>
 
-          <div className="p-3 bg-[var(--campo)] border border-[var(--sep)] rounded text-xs space-y-1">
-            <span className="text-[var(--texto-tenue)] font-semibold block">Vectores del Autoencoder:</span>
-            <p className="text-[11px] text-[var(--texto-sec)] leading-relaxed">
-              Las 6 escalas integran los 24 reactivos de entrada del modelo canónico. Inferencia clínica desactivada en fase local de auditoría.
-            </p>
+          <div className="p-3 bg-[var(--campo)] border border-[var(--sep)] rounded text-xs space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[var(--texto-sec)] font-semibold">
+                {roleConfig.administra
+                  ? 'Ejecuciones Autoencoder Auditadas (SQLite model_runs · 8 Campos)'
+                  : 'Estado de procesamiento funcional del expediente'}
+              </span>
+              {roleConfig.administra && (
+                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[var(--panel)] border border-[var(--sep-claro)] text-[var(--info)]">
+                  encoder_22_checkpoint_fase2
+                </span>
+              )}
+            </div>
+            {activeSqlRecord?.model_runs && activeSqlRecord.model_runs.length > 0 ? (
+              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                {activeSqlRecord.model_runs.map((mr) => (
+                  <div
+                    key={mr.run_id}
+                    className="p-2 rounded bg-[var(--panel)] border border-[var(--sep)] text-[11px] space-y-1"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <span className="font-semibold text-[var(--texto)]">
+                        {roleConfig.administra
+                          ? mr.model_id || mr.model_version
+                          : 'Evaluación funcional transversal'}
+                      </span>
+                      <span className={mr.state === 'completed' ? 'est-ok' : 'est-warn'}>
+                        {mr.state === 'completed' ? 'Completado' : mr.state}
+                      </span>
+                    </div>
+                    {roleConfig.administra ? (
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono text-[var(--texto-sec)]">
+                        <span>Ver: {mr.model_version}</span>
+                        <span>Preproc: {mr.preprocessing_version}</span>
+                        <span>Schema: {mr.input_schema_version || 'vector_24v_canonico_v1'}</span>
+                        <span>Actor: {mr.executed_by || 'system'} ({mr.actor_role || 'cli'})</span>
+                        <span className="col-span-2 truncate">
+                          SHA-256: {mr.artifact_sha256 ? `${mr.artifact_sha256.slice(0, 20)}…` : 'Pendiente'} · Fecha:{' '}
+                          {(mr.finished_at || mr.started_at || '').slice(0, 19).replace('T', ' ')}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-[10.5px] text-[var(--texto-sec)]">
+                        Registrado el{' '}
+                        <span className="font-mono">
+                          {(mr.finished_at || mr.started_at || '').slice(0, 19).replace('T', ' ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-[var(--texto-sec)] leading-relaxed">
+                Las 6 escalas integran la evaluación funcional transversal. Complete los 6 instrumentos y consulte el análisis en Inteligencia funcional.
+              </p>
+            )}
           </div>
         </div>
       </div>

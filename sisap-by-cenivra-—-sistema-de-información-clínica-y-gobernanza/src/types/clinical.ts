@@ -171,12 +171,16 @@ export interface InitialEvaluationData {
   fecha_eval: string;
   aplico: string;
   // Raw items or strings
-  raw_bis_11: string; // 30 numbers 1-4
+  raw_bis_11: string; // 30 numbers 1-4 (o 0-4 excel_canonico)
   raw_bsl_23: string; // 23 numbers 0-4
+  raw_bsl_23_conductual?: string; // 11 numbers 0-4
+  bsl_general_0_1?: number; // 0.0 - 1.0
   raw_gad_7: string;  // 7 numbers 0-3
-  raw_staxi_2: string; // 44 numbers 1-4
+  raw_staxi_2: string; // 49 numbers 1-4
   raw_bads: string;    // 25 numbers 0-6
-  raw_eros: string;    // 10 numbers 1-7
+  raw_eros: string;    // 10 numbers 0-4 o 1-4
+  sustancia_principal?: string;
+  modo_scoring?: 'excel_canonico' | 'manual_estandar';
   // Demographics
   edad: number;
   tiempo_consumo_anios: number;
@@ -221,7 +225,7 @@ export interface InitialEvaluationData {
       probabilidad_clase_3b: number;
       incertidumbre_clase_3b: number;
     };
-    recommendations: string[];
+    recommendations?: string[];
   };
   creado_en: string;
 }
@@ -290,4 +294,166 @@ export interface DeidentificationVaultToken {
   expiraEn: string; // ISO String
   ttlSegundos: number;
 }
+
+export interface FollowUpEvaluationRecord {
+  follow_up_id: string;
+  patient_id: string;
+  evaluation_date: string;
+  session_number: number | null;
+  instrument: 'BADS' | 'GAD-7' | 'EROS' | 'BSCS' | 'PSS-4' | 'SHAPS' | 'UCLA-3' | 'BIS-11' | 'STAXI-2' | 'BSL-23';
+  total_score: number;
+  subscales?: Record<string, number> | null;
+  items: number[];
+  items_count: number;
+  clinical_severity?: string | null;
+  clinician_id?: string | null;
+  notes?: string | null;
+  creado_en: string;
+}
+
+// Centro de Evaluación Psicométrica — Modelo en 3 niveles (Evaluación / Respuestas / Resultados)
+export type PsychometricApplicationStatus = 'draft' | 'completed' | 'archived';
+export type PsychometricCaptureMode = 'digital_form' | 'numeric_sequence_legacy';
+
+export interface PsychometricEvaluationRecord {
+  evaluation_id: string;
+  patient_id: string;
+  instrument_id: 'BIS-11' | 'BSL-23' | 'GAD-7' | 'EROS' | 'BADS' | 'STAXI-2';
+  instrument_version: string;
+  language: string;
+  started_at: string;
+  completed_at: string | null;
+  evaluator: string;
+  application_status: PsychometricApplicationStatus;
+  capture_mode: PsychometricCaptureMode;
+  scoring_mode: 'manual_estandar' | 'excel_canonico';
+  session_context: string;
+  complements?: {
+    bslGeneral01?: number | null;
+    bslBehavioral11?: Array<number | null> | null;
+  } | null;
+  notes?: string | null;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export interface PsychometricItemResponseRecord {
+  response_row_id: string;
+  evaluation_id: string;
+  item_id: string;
+  item_number: number;
+  canonical_code: string | null;
+  selected_label: string | null;
+  numeric_code: number | null;
+  modified_at: string;
+}
+
+export interface PsychometricResultRecord {
+  result_id: string;
+  evaluation_id: string;
+  total_score: number | null;
+  technical_total_score: number | null;
+  mean_score: number | null;
+  subscales: {
+    subscales: any[];
+    subscaleMap: Record<string, number | null>;
+    alternateScoringModes: Record<string, any>;
+  };
+  recoded_values: any[];
+  missing_items: {
+    missingItems: number;
+    missingItemIds: string[];
+    missingDisplayNumbers: number[];
+    isValidForScoring: boolean;
+    warnings: string[];
+  };
+  derived_indicators: Record<string, any>;
+  interpretation: {
+    level: string;
+    summary: string;
+    descriptiveNotes: string[];
+    nonDiagnosticNotice: string;
+  };
+  numeric_sequence: string;
+  algorithm_version: string;
+  calculated_at: string;
+}
+
+export interface PsychometricEvaluationBundle {
+  evaluation: PsychometricEvaluationRecord;
+  responses: PsychometricItemResponseRecord[];
+  latestResult: PsychometricResultRecord | null;
+  resultsHistory: PsychometricResultRecord[];
+}
+
+export interface LongitudinalInstrumentSummary {
+  instrument_id: string;
+  total_applications: number;
+  completed_count: number;
+  draft_count: number;
+  versionsObserved: string[];
+  versionMismatchWarning: boolean;
+  versionWarningMessage: string | null;
+  timeline: Array<{
+    evaluation_id: string;
+    date: string;
+    timestamp: string;
+    version: string;
+    evaluator: string;
+    total_score: number | null;
+    technical_total_score: number | null;
+    mean_score: number | null;
+    subscaleMap: Record<string, number | null>;
+    delta_from_previous: number | null;
+  }>;
+}
+
+export interface SisapDesktopBackendInfo {
+  host: string;
+  port: number;
+  apiBase: string;
+  userDbDir: string;
+  dbFilePath: string;
+  backupDir: string;
+  logFile: string;
+  version: string;
+  isPackaged: boolean;
+}
+
+export interface SisapDesktopBackupEntry {
+  fileName: string;
+  sizeBytes: number;
+  modifiedAt: string;
+}
+
+export interface SisapDesktopBridge {
+  isDesktop: boolean;
+  platform: string;
+  apiBase: string;
+  openExternal: (url: string) => Promise<boolean>;
+  getBackendInfo: () => Promise<SisapDesktopBackendInfo>;
+  createDbBackup: () => Promise<{
+    ok: boolean;
+    fileName: string;
+    path: string;
+    sizeBytes: number;
+    createdAt: string;
+  }>;
+  listDbBackups: () => Promise<SisapDesktopBackupEntry[]>;
+  openDataDir: (target?: 'db' | 'backups' | 'logs') => Promise<{
+    ok: boolean;
+    path: string;
+    error: string | null;
+  }>;
+  readDesktopLog: () => Promise<string>;
+  closeApp: () => void;
+}
+
+declare global {
+  interface Window {
+    sisapDesktop?: SisapDesktopBridge;
+  }
+}
+
+
 

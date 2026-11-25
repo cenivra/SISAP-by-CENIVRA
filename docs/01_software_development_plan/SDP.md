@@ -1,4 +1,7 @@
 # SISAP by CENIVRA
+
+> [!NOTE]
+> **Control Documental (Fuente Única de Verdad `v1.1.0`):** Este archivo se conserva como registro histórico de la fase conceptual inicial (`v1.0`, agosto 2026, Python / Dash). El Plan de Desarrollo de Software (SDP) **vigente para la línea `v1.1.0` (Electron + React + Node.js SQLite WAL + R)** reside en [`docs/lifecycle/02_software_development_plan/SOFTWARE_DEVELOPMENT_PLAN_v1.1.md`](../lifecycle/02_software_development_plan/SOFTWARE_DEVELOPMENT_PLAN_v1.1.md).
 ## Software Development Plan (SDP)
 
 **Documento:** Software Development Plan  

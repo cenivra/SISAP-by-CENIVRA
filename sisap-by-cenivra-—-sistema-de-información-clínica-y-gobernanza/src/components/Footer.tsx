@@ -6,35 +6,47 @@ import { User as FirebaseUser } from 'firebase/auth';
 interface FooterProps {
   currentUser: UserAccount;
   googleUser: FirebaseUser | null;
+  appMode?: 'demo' | 'institutional';
+  activeGovernedModelId?: string;
 }
 
-export const Footer: React.FC<FooterProps> = ({ currentUser, googleUser }) => {
+export const Footer: React.FC<FooterProps> = ({
+  currentUser,
+  googleUser,
+  appMode = 'demo',
+}) => {
   const role = ROLES[currentUser.rol];
+  const isDesktop = typeof window !== 'undefined' && Boolean(window.sisapDesktop?.isDesktop);
 
   return (
-    <footer className="shrink-0 bg-[var(--panel)] border-t border-[var(--sep-claro)] px-4 py-1.5 text-[11px] text-[var(--texto-tenue)] flex flex-wrap items-center gap-4 justify-between">
-      <div className="flex items-center gap-3">
+    <footer className="shrink-0 bg-[var(--panel)] border-t border-[var(--sep)] px-4 py-1 text-[11px] text-[var(--texto-tenue)] flex flex-wrap items-center gap-3 justify-between">
+      <div className="flex items-center gap-2.5 flex-wrap">
         <span>
-          Sesión: <b className="text-[var(--texto)]">{currentUser.u}</b> ({role.n})
+          Sesión: <b className="text-[var(--texto-sec)]">{currentUser.u}</b> ({role?.n || currentUser.rol})
         </span>
-        <span className="hidden sm:inline text-[var(--sep-claro)]">|</span>
+        <span className="hidden sm:inline text-[var(--sep-claro)]">·</span>
         <span className="hidden sm:inline">
-          Almacenamiento: <span className="text-[var(--normal)]">Local Persistente</span>
+          Almacenamiento: <span className="text-[var(--normal)]">{isDesktop ? 'Local seguro (%APPDATA%)' : 'Local SQLite'}</span>
         </span>
-        <span className="hidden md:inline text-[var(--sep-claro)]">|</span>
-        <span className="hidden md:inline">
-          Google Drive:{' '}
-          <span className={googleUser ? 'text-[var(--normal)]' : 'text-[var(--advertencia)]'}>
-            {googleUser ? 'Sincronizado' : 'Sin vincular'}
-          </span>
-        </span>
+        {appMode === 'demo' && (
+          <>
+            <span className="hidden md:inline text-[var(--sep-claro)]">·</span>
+            <span className="hidden md:inline text-[var(--advertencia)]">Modo Evaluación</span>
+          </>
+        )}
+        {role?.exportar_drive && (
+          <>
+            <span className="hidden lg:inline text-[var(--sep-claro)]">·</span>
+            <span className="hidden lg:inline">
+              Drive: {googleUser ? 'Sincronizado' : 'Opcional'}
+            </span>
+          </>
+        )}
       </div>
 
-      <div className="flex items-center gap-3 text-[10.5px]">
-        <span className="hidden lg:inline text-[var(--texto-tenue)]">
-          Cumplimiento: NOM-004-SSA3-2012 (Expediente Clínico) y NOM-028-SSA2 (Adicciones)
-        </span>
-        <span className="text-[var(--texto-sec)] font-mono">CENIVRA © 2026</span>
+      <div className="flex items-center gap-3 text-[11px]">
+        <span className="hidden md:inline">NOM-004-SSA3-2012 · NOM-024-SSA3-2012 · NOM-028-SSA2</span>
+        <span className="text-[var(--texto-sec)] font-medium">SISAP by CENIVRA</span>
       </div>
     </footer>
   );

@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
 import {
   getAuth,
   signInWithPopup,
@@ -7,7 +7,14 @@ import {
   User,
   signOut,
 } from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';
+
+// Carga opcional compatible con compilación limpia (tsc / Vite) sin exigir firebase-applet-config.json presente
+const optionalFirebaseModules = import.meta.glob<FirebaseOptions>(
+  '../../firebase-applet-config.json',
+  { eager: true, import: 'default' }
+);
+const firebaseConfig: FirebaseOptions | null =
+  optionalFirebaseModules['../../firebase-applet-config.json'] ?? null;
 
 let app = null;
 let auth: any = null;

@@ -1,0 +1,69 @@
+{
+  "registry_version": "1.0.0-20261123",
+  "canonical_reference_cohort_n": 166,
+  "default_production_model_id": "encoder_22_checkpoint_fase2",
+  "artifacts_sha256": {
+    "models/pesos_encoder_22_h5.json": "ee507679c44dd439dd4e85e47749f52548076a0d7b0c241f252712c2d009e3f3",
+    "models/pesos_encoder_24_h5.json": "184d4b88c6b5b00a8cbbdb74c6a28d9be2e81d227ead2f037c4d1b5dd6dc112c",
+    "models/pesos_autoencoder_22_completo.json": "313dcd2d8f7c136222eaff1c56583b02af332c259ff0aee85b02f349b93c3d9e",
+    "models/pesos_autoencoder_24_completo.json": "46d44a7ad05eabadc1caf70488bf2f9d6e513cb7486bdeed9d3e4bf3808694c6",
+    "models/pesos_candidato_17_m3k12.json": "28b3a56666c1feb6712e9f4c3bdd1fa16f010bc80b76b6dddc540fdeffd31a44",
+    "models/percentiles_referencia_12d.json": "7dbbe884838b4c582c1684b9c12bed8a803e8919cbce01347f9385203e0b8efc",
+    "models/percentiles_referencia_12d.csv": "a3afdf1cf18948fcb16cd03ab575be151d08c490fd4480f041f2222101d805c2",
+    "preprocessing/parametros_referencia_completos.json": "bb067e40ab3a14225e6f45745986dff2b0b33305bb9e9bbed42b7f00b6833879"
+  },
+  "models": {
+    "encoder_22_checkpoint_fase2": {
+      "n_input": 22,
+      "n_latent": 12,
+      "architecture": [
+        22,
+        32,
+        24,
+        12,
+        24,
+        32,
+        22
+      ],
+      "source_encoder_h5_sha256": "fc82dd7f7fbc87f3b45fd4455b2a8011cca5451c6f1eb64b82ddda005c77151f",
+      "source_full_h5_sha256": "57d5aab9da932c5625da361a8710415abbae0870b135011856e5a5815a69a528",
+      "weights_file": "models/pesos_autoencoder_22_completo.json",
+      "validation_state": "VERIFICADO_EXACTO",
+      "notes": "Reproduce representaciones_completas.csv (166x12) con error max 1.79e-7 y r=1.000000; excluye STAXI_2STAXI_temperamento y compuesto_staxi."
+    },
+    "encoder_24_deployed": {
+      "n_input": 24,
+      "n_latent": 12,
+      "architecture": [
+        24,
+        32,
+        24,
+        12,
+        24,
+        32,
+        24
+      ],
+      "source_encoder_h5_sha256": "598313c683529d60f9e957ea521b97cb66f6cf391a7edaee106f0b65dc129cfe",
+      "source_full_h5_sha256": "03e7423d3b48a683b7eb6483dda785c315dca8a7c3a94bb055e6f0c7632f2d9a",
+      "weights_file": "models/pesos_autoencoder_24_completo.json",
+      "validation_state": "DESARROLLADO_PENDIENTE_VALIDACION_EXTERNA",
+      "notes": "Modelo reentrenado sobre 24 variables sin semilla fija en L19077-19122 del script original."
+    },
+    "ae_tus_17to12_m3k12": {
+      "n_input": 17,
+      "n_latent": 12,
+      "architecture": [
+        17,
+        24,
+        12,
+        24,
+        17
+      ],
+      "source_keras_sha256": "05abc716d374a6de4f7d9cd943133d01d373dc6351ff3a1bcaf439bf50494fe3",
+      "source_preproc_rds_sha256": "14137d7b6f367469fd7496704967d7c164fbea52f45b057085f1637bbb7e976f",
+      "weights_file": "models/pesos_candidato_17_m3k12.json",
+      "validation_state": "PROTOTIPO_CONFIRMATORIO_SIN_VALIDACION_CLINICA",
+      "notes": "Candidato A (M3-k12) evaluado con CV 5-fold (semillas 4-6, R2_orig=0.847, r_dist=0.857); fold 1/semilla 4."
+    }
+  }
+}

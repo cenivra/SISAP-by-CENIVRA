@@ -7,12 +7,26 @@ import { ShieldCheck, Lock, AlertCircle, KeyRound, Info, CheckCircle2, ArrowRigh
 
 interface LoginModalProps {
   onLoginSuccess: (user: UserAccount) => void;
+  appMode?: 'demo' | 'institutional';
+  onAppModeChange?: (mode: 'demo' | 'institutional') => void;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({
+  onLoginSuccess,
+  appMode = 'demo',
+  onAppModeChange,
+}) => {
+  const isLockedInstitutional =
+    (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_SISAP_DISTRIBUTION ===
+    'institutional';
+  const effectiveMode: 'demo' | 'institutional' = isLockedInstitutional ? 'institutional' : appMode;
   const users = StorageService.getUsers();
-  const [selectedUsername, setSelectedUsername] = useState<string>(users[3]?.u || 'psicologo');
-  const [password, setPassword] = useState<string>(users[3]?.c || 'demo-clinico');
+  const [selectedUsername, setSelectedUsername] = useState<string>(
+    effectiveMode === 'institutional' ? '' : users[3]?.u || 'psicologo'
+  );
+  const [password, setPassword] = useState<string>(
+    effectiveMode === 'institutional' ? '' : users[3]?.c || 'demo-clinico'
+  );
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
@@ -43,8 +57,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
     if (!mfaPendingUser) return;
 
     const trimmed = mfaCode.trim();
-    // Allow the current live OTP or a master recovery OTP 999111
-    if (trimmed === totpInfo.code || trimmed === '999111' || trimmed === '123456') {
+    const mfaAccepted =
+      effectiveMode === 'institutional'
+        ? trimmed === totpInfo.code
+        : trimmed === totpInfo.code || trimmed === '999111' || trimmed === '123456';
+    if (mfaAccepted) {
       const user = mfaPendingUser;
       setMfaPendingUser(null);
       setMfaCode('');
@@ -181,35 +198,95 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
           </div>
         </div>
 
-        <div className="text-xs text-[var(--texto-sec)] mb-5 pb-3 border-b border-[var(--sep)]">
-          Control de acceso profesional · Gobernanza de datos con separación ontológica de identidad
+        <div className="text-xs text-[var(--texto-sec)] mb-4 pb-3 border-b border-[var(--sep)] flex flex-wrap items-center justify-between gap-2">
+          <span>Control de acceso profesional · Gobernanza de datos con separación ontológica de identidad</span>
+          {!isLockedInstitutional && onAppModeChange ? (
+            <div className="inline-flex rounded border border-[var(--sep)] bg-[var(--fondo)] p-0.5 text-[11px]">
+              <button
+                type="button"
+                onClick={() => {
+                  onAppModeChange('demo');
+                  setSelectedUsername(users[3]?.u || 'psicologo');
+                  setPassword(users[3]?.c || 'demo-clinico');
+                  setErrorMessage('');
+                }}
+                className={`px-2.5 py-1 rounded-sm font-medium transition ${
+                  effectiveMode === 'demo'
+                    ? 'bg-[var(--accion)] text-white'
+                    : 'text-[var(--texto-sec)] hover:text-[var(--texto)]'
+                }`}
+              >
+                Modo Evaluación
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onAppModeChange('institutional');
+                  setSelectedUsername('');
+                  setPassword('');
+                  setErrorMessage('');
+                }}
+                className={`px-2.5 py-1 rounded-sm font-medium transition ${
+                  effectiveMode === 'institutional'
+                    ? 'bg-[var(--normal)] text-white'
+                    : 'text-[var(--texto-sec)] hover:text-[var(--texto)]'
+                }`}
+              >
+                Modo Institucional
+              </button>
+            </div>
+          ) : (
+            <span className="px-2 py-0.5 rounded bg-[var(--normal)]/15 text-[var(--normal)] border border-[var(--normal)]/30 font-mono text-[10.5px]">
+              MODO INSTITUCIONAL ESTRICTO
+            </span>
+          )}
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-[var(--texto-sec)] mb-1.5">
-              Seleccionar Perfil Profesional de Acceso ({users.length} cuentas)
-            </label>
-            <select
-              value={selectedUsername}
-              onChange={(e) => handleUserSelect(e.target.value)}
-              className="sisap-select font-medium"
-            >
-              {users.map((user) => {
-                const role = ROLES[user.rol];
-                return (
-                  <option key={user.u} value={user.u}>
-                    {user.nombre} ({role?.n || user.rol}) — {user.u}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          {effectiveMode === 'demo' ? (
+            <div>
+              <label className="block text-xs font-medium text-[var(--texto-sec)] mb-1.5">
+                Seleccionar Perfil Profesional de Acceso ({users.length} cuentas)
+              </label>
+              <select
+                value={selectedUsername}
+                onChange={(e) => handleUserSelect(e.target.value)}
+                className="sisap-select font-medium"
+              >
+                {users.map((user) => {
+                  const role = ROLES[user.rol];
+                  return (
+                    <option key={user.u} value={user.u}>
+                      {user.nombre} ({role?.n || user.rol}) — {user.u}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-medium text-[var(--texto-sec)] mb-1.5">
+                Identificador de Cuenta Institucional *
+              </label>
+              <input
+                type="text"
+                required
+                autoComplete="username"
+                value={selectedUsername}
+                onChange={(e) => {
+                  setSelectedUsername(e.target.value);
+                  setErrorMessage('');
+                }}
+                className="sisap-input font-medium"
+                placeholder="Ingrese su usuario institucional"
+              />
+            </div>
+          )}
 
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="text-xs font-medium text-[var(--texto-sec)]">Contraseña</label>
-              {activeDemoUser.c && (
+              {effectiveMode === 'demo' && activeDemoUser?.c && (
                 <span className="text-[11px] text-[var(--texto-tenue)] font-mono">
                   Clave demo: <code className="text-[var(--accion)]">{activeDemoUser.c}</code>
                 </span>
@@ -218,6 +295,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
             <div className="relative">
               <input
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="sisap-input pr-10"
@@ -234,25 +312,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          {/* Role capability summary */}
-          <div className="p-3 bg-[var(--fondo)] border border-[var(--sep)] rounded text-xs space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-[var(--texto)]">
-                Capacidades del rol: {ROLES[activeDemoUser.rol]?.n}
-              </span>
-              <span className="text-[10.5px] font-mono text-[var(--accion)]">
-                {activeDemoUser.cedula || 'Sin cédula registrada'}
-              </span>
-            </div>
-            <p className="text-[var(--texto-sec)] leading-normal">
-              {ROLES[activeDemoUser.rol]?.descripcion}
-            </p>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded border ${
-                  ROLES[activeDemoUser.rol]?.ve_identidad
-                    ? 'text-[var(--normal)] border-[var(--normal)]/30 bg-[var(--normal)]/5'
-                    : 'text-[var(--texto-tenue)] border-[var(--sep)]'
+          {effectiveMode === 'demo' && activeDemoUser ? (
+            <div className="p-3 bg-[var(--fondo)] border border-[var(--sep)] rounded text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[var(--texto)]">
+                  Capacidades del rol: {ROLES[activeDemoUser.rol]?.n}
+                </span>
+                <span className="text-[10.5px] font-mono text-[var(--accion)]">
+                  {activeDemoUser.cedula || 'Sin cédula registrada'}
+                </span>
+              </div>
+              <p className="text-[var(--texto-sec)] leading-normal">
+                {ROLES[activeDemoUser.rol]?.descripcion}
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded border ${
+                    ROLES[activeDemoUser.rol]?.ve_identidad
+                      ? 'text-[var(--normal)] border-[var(--normal)]/30 bg-[var(--normal)]/5'
+                      : 'text-[var(--texto-tenue)] border-[var(--sep)]'
                 }`}
               >
                 {ROLES[activeDemoUser.rol]?.ve_identidad ? '✓ Ve Identidad' : '✗ Identidad Oculta'}
@@ -286,6 +364,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
               </span>
             </div>
           </div>
+          ) : (
+            <div className="p-3 bg-[var(--fondo)] border border-[var(--sep)] rounded text-xs text-[var(--texto-sec)]">
+              Sesión en <strong className="text-[var(--texto)]">Modo Institucional</strong>: sin autocompletado de credenciales ni códigos TOTP expuestos en pantalla.
+            </div>
+          )}
 
           <button type="submit" disabled={isVerifying} className="sisap-btn w-full py-2.5 text-sm">
             {isVerifying ? 'Verificando Hash Criptográfico...' : 'Ingresar al Sistema Clínico'}
@@ -389,28 +472,29 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
               En cumplimiento con la <b>NOM-024-SSA3-2012</b> y control de acceso estricto, ingrese el código temporal de 6 dígitos para el usuario <b>{mfaPendingUser.u}</b> ({mfaPendingUser.nombre}).
             </p>
 
-            {/* TOTP Generator & Token Helper */}
-            <div className="mb-4 p-3 bg-[var(--campo)] border border-[var(--sep)] rounded space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-[var(--texto-tenue)] font-mono">Token TOTP Activo:</span>
-                <span className="text-[11px] font-mono text-[var(--advertencia)]">
-                  Renueva en: <b>{totpInfo.secondsRemaining}s</b>
-                </span>
+            {effectiveMode === 'demo' && (
+              <div className="mb-4 p-3 bg-[var(--campo)] border border-[var(--sep)] rounded space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[var(--texto-tenue)] font-mono">Token TOTP Activo (Evaluación):</span>
+                  <span className="text-[11px] font-mono text-[var(--advertencia)]">
+                    Renueva en: <b>{totpInfo.secondsRemaining}s</b>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xl font-mono font-bold tracking-widest text-[var(--accion)]">
+                    {totpInfo.code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMfaCode(totpInfo.code)}
+                    className="sisap-btn-sec text-[11px] py-1 px-2.5 inline-flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Autocompletar Código</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xl font-mono font-bold tracking-widest text-[var(--accion)]">
-                  {totpInfo.code}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setMfaCode(totpInfo.code)}
-                  className="sisap-btn-sec text-[11px] py-1 px-2.5 inline-flex items-center gap-1"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Autocompletar Código</span>
-                </button>
-              </div>
-            </div>
+            )}
 
             <form onSubmit={handleMfaSubmit} className="space-y-4">
               <div>
@@ -436,9 +520,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
                 </div>
               )}
 
-              <div className="text-[11px] text-[var(--texto-tenue)]">
-                También puede emplear el código de contingencia clínica: <code className="font-mono text-[var(--texto)]">999111</code>.
-              </div>
+              {effectiveMode === 'demo' && (
+                <div className="text-[11px] text-[var(--texto-tenue)]">
+                  También puede emplear el código de contingencia clínica: <code className="font-mono text-[var(--texto)]">999111</code>.
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-[var(--sep-claro)]">
                 <button

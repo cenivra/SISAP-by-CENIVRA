@@ -1,5 +1,8 @@
 # SISAP by CENIVRA
 
+> [!NOTE]
+> **Control Documental (Fuente Única de Verdad `v1.1.0`):** Este archivo se conserva como registro histórico de la fase conceptual inicial (`v1.0`, agosto 2026, Python / Dash). La Especificación de Requisitos de Software (SRS) **vigente para `v1.1.0`** reside en [`docs/lifecycle/03_requirements/SOFTWARE_REQUIREMENTS_SPECIFICATION_v1.1.md`](../lifecycle/03_requirements/SOFTWARE_REQUIREMENTS_SPECIFICATION_v1.1.md).
+
 # Software Requirements Specification — SRS
 
 **Documento:** Software Requirements Specification  

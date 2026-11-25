@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "model_id": "ae_tus_17to12",
+  "model_version": "0.1.0-2026-11-15",
+  "input": {
+    "shape": 17,
+    "dtype": "numeric",
+    "order_matters": true,
+    "variables": [
+      {"name": "bis_atencion", "type": "integer", "min_obs": 0, "max_obs": 19},
+      {"name": "bis_motor", "type": "integer", "min_obs": 0, "max_obs": 26},
+      {"name": "bis_autocontrol", "type": "integer", "min_obs": 0, "max_obs": 21},
+      {"name": "bis_inestabilidad_cognitiva", "type": "integer", "min_obs": 0, "max_obs": 12},
+      {"name": "bis_perseverancia", "type": "integer", "min_obs": 0, "max_obs": 15},
+      {"name": "bis_impulsividad_motora", "type": "integer", "min_obs": 0, "max_obs": 35},
+      {"name": "bis_impulsividad_no_planeada", "type": "integer", "min_obs": 0, "max_obs": 44},
+      {"name": "staxi_estado", "type": "integer", "min_obs": 15, "max_obs": 63},
+      {"name": "staxi_rasgo", "type": "integer", "min_obs": 10, "max_obs": 40},
+      {"name": "bsl_total", "type": "integer", "min_obs": 0, "max_obs": 85},
+      {"name": "bsl_conductual", "type": "integer", "min_obs": 0, "max_obs": 35},
+      {"name": "gad_total", "type": "integer", "min_obs": 0, "max_obs": 21},
+      {"name": "bads_activacion", "type": "integer", "min_obs": 0, "max_obs": 42},
+      {"name": "bads_evitacion_rumia", "type": "integer", "min_obs": 0, "max_obs": 48},
+      {"name": "bads_afectacion_trabajo", "type": "integer", "min_obs": 0, "max_obs": 30},
+      {"name": "bads_afectacion_social", "type": "integer", "min_obs": 0, "max_obs": 30},
+      {"name": "eros_total", "type": "integer", "min_obs": 0, "max_obs": 40}
+    ]
+  },
+  "validation": {
+    "on_missing_values": "reject",
+    "imputation": "none",
+    "on_extra_variables": "reject",
+    "on_missing_variables": "reject",
+    "on_wrong_order": "reject",
+    "on_non_numeric": "reject",
+    "on_out_of_observed_range": "accept_with_warning",
+    "on_non_finite": "reject"
+  },
+  "excluded_from_input": ["id", "edad", "sexo", "tiempo_consumo_anios", "trat_previos", "sustancia_principal"],
+  "note": "Las variables excluidas son contexto externo del perfil funcional; nunca ingresan al encoder."
+}
