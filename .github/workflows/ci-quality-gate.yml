@@ -12,7 +12,8 @@ permissions:
 
 env:
   APP_DIR: "sisap-by-cenivra-—-sistema-de-información-clínica-y-gobernanza"
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 jobs:
   quality_gate:
@@ -62,7 +63,7 @@ jobs:
           rm -rf "$TMP_DB"
 
       - name: 6. SonarQube Cloud scan (when SONAR_TOKEN is configured)
-        if: ${{ secrets.SONAR_TOKEN != '' }}
+        if: ${{ env.SONAR_TOKEN != '' }}
         uses: SonarSource/sonarqube-scan-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
